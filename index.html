@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 학교예산 사업관리카드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f8f9fb;
+    --surface2: #f0f2f5;
+    --border: #e2e6ea;
+    --accent: #2563eb;
+    --accent-soft: #eff4ff;
+    --accent-glow: rgba(37,99,235,0.10);
+    --green: #16a34a;
+    --yellow: #ca8a04;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: #fff; color: var(--text); min-height: 100vh; }
+
+  /* ── Header ── */
+  .header {
+    background: #fff;
+    border-bottom: 1.5px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 14px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .header-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .header-title h1 { font-size: 15px; font-weight: 700; }
+  .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .stat-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .stat-pill strong { color: var(--text); font-weight: 600; margin-right: 3px; }
+
+  /* ── Upload button ── */
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 7px 14px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  }
+  .upload-btn:hover { background: #1d4ed8; }
+  .upload-btn.secondary { background: #6b7280; }
+  .upload-btn.secondary:hover { background: #4b5563; }
+  #fileInput, #fileInputHeader { display: none; }
+
+  /* ── Drop zone ── */
+  .drop-zone {
+    margin: 28px 32px 0;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop-zone .dz-icon { font-size: 44px; margin-bottom: 12px; }
+  .drop-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .drop-zone p { font-size: 13px; color: var(--text-muted); }
+  .drop-zone .hint { font-size: 11px; color: var(--text-dim); margin-top: 10px; }
+
+  /* ── File loaded tag ── */
+  .file-tag { display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:7px; padding:5px 12px; font-size:12px; color:#15803d; font-weight:600; }
+
+  /* ── Summary cards ── */
+  .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; padding: 20px 32px 16px; }
+  .card { background:#fff; border:1.5px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  .card .lbl { font-size:11px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+  .card .val { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:600; }
+  .card .sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
+
+  /* ── Search ── */
+  .search-area { padding: 0 32px; }
+  .search-box { position:relative; margin-bottom:12px; }
+  .search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; pointer-events:none; }
+  .search-input {
+    width:100%; background:#fff; border:1.5px solid var(--border); border-radius:10px;
+    padding:11px 14px 11px 40px; font-family:'Noto Sans KR',sans-serif; font-size:14px; color:var(--text);
+    outline:none; transition:border-color .2s, box-shadow .2s; box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
+  .search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  .search-input::placeholder { color:var(--text-dim); }
+
+  /* ── Filters ── */
+  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .flabel { font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap; }
+  .chip-group { display:flex; gap:5px; flex-wrap:wrap; }
+  .chip { padding:4px 10px; border-radius:14px; font-size:12px; border:1.5px solid var(--border); background:#fff; color:var(--text-muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .chip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .fselect { background:#fff; border:1.5px solid var(--border); border-radius:7px; padding:5px 10px; font-family:'Noto Sans KR',sans-serif; font-size:13px; color:var(--text); outline:none; cursor:pointer; }
+  .fselect:focus { border-color:var(--accent); }
+
+  /* ── Results bar ── */
+  .results-bar { display:flex; align-items:center; justify-content:space-between; padding:0 32px; margin-bottom:10px; }
+  .rcount { font-size:13px; color:var(--text-muted); }
+  .rcount span { color:var(--accent); font-weight:700; }
+
+  /* ── Table ── */
+  .table-container { padding:0 32px 40px; overflow-x:auto; }
+  table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; background:#fff; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  thead th {
+    background:var(--surface); padding:10px 13px; text-align:left; font-weight:600;
+    color:var(--text-muted); font-size:12px; border-bottom:1.5px solid var(--border);
+    white-space:nowrap; cursor:pointer; user-select:none; position:sticky; top:62px; z-index:10;
+  }
+  thead th:hover { color:var(--accent); }
+  thead th.sorted { color:var(--accent); }
+  thead th::after { content:' ↕'; opacity:.2; font-size:10px; }
+  thead th.sorted-asc::after { content:' ↑'; opacity:1; }
+  thead th.sorted-desc::after { content:' ↓'; opacity:1; }
+  tbody tr { border-bottom:1px solid #f0f2f5; transition:background .1s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:#f5f8ff; }
+  tbody td { padding:9px 13px; vertical-align:middle; }
+  td.num { font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right; white-space:nowrap; }
+  td.num.pos { color:var(--green); }
+  td.num.zero { color:var(--text-dim); }
+
+  .badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .bc { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
+  .bi { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+
+  .prog-wrap { display:flex; align-items:center; gap:7px; min-width:90px; }
+  .prog-bar { height:5px; background:var(--surface2); border-radius:3px; flex:1; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:3px; background:var(--accent); }
+  .prog-fill.hi { background:var(--green); }
+  .prog-fill.md { background:var(--yellow); }
+  .prog-pct { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); min-width:34px; text-align:right; }
+
+  .ptag { display:inline-block; padding:2px 5px; background:var(--surface2); border:1px solid var(--border); border-radius:4px; font-size:11px; color:var(--text-muted); margin:1px; }
+  .hl { background:#fef9c3; color:#854d0e; border-radius:2px; padding:0 1px; }
+
+  /* ── Empty ── */
+  .empty { text-align:center; padding:70px 32px; }
+  .empty .ei { font-size:44px; margin-bottom:12px; }
+  .empty h3 { font-size:15px; font-weight:500; color:var(--text-muted); }
+  .empty p { font-size:13px; color:var(--text-dim); margin-top:5px; }
+
+  @media(max-width:768px) {
+    .header { padding:12px 16px; }
+    .header-right .stat-pill { display:none; }
+    .search-area, .table-container, .results-bar, .summary-cards { padding-left:16px; padding-right:16px; }
+    .drop-zone { margin:16px 16px 0; }
+    .summary-cards { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-icon">📊</div>
+  <div class="header-title">
+    <h1>학교예산 사업관리카드</h1>
+    <p>예산현액 검색 및 조회 시스템</p>
+  </div>
+  <div class="header-right" id="headerRight">
+    <label class="upload-btn" for="fileInput">📂 엑셀 파일 업로드</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+</div>
+
+<!-- Drop Zone (shown only when no data) -->
+<div id="dropSection">
+  <div class="drop-zone" id="dropZone">
+    <div class="dz-icon">📂</div>
+    <h3>엑셀 파일을 드래그하거나 클릭해서 업로드</h3>
+    <p>사업관리카드 파일을 올리면 바로 검색할 수 있습니다</p>
+    <p class="hint">지원 형식: .xlsx, .xls &nbsp;|&nbsp; 2026 기본 데이터가 미리 로드되어 있습니다</p>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div id="mainContent" style="display:none">
+  <div class="summary-cards" id="summaryCards"></div>
+
+  <div class="search-area">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text"
+             placeholder="산출내역, 세부사업, 원가통계비목, 담당자 등으로 검색..." autocomplete="off">
+    </div>
+    <div class="filters">
+      <span class="flabel">세부사업</span>
+      <div class="chip-group" id="catChips"></div>
+      <span class="flabel" style="margin-left:6px">담당자</span>
+      <select class="fselect" id="personFilter"><option value="">전체</option></select>
+    </div>
+  </div>
+
+  <div class="results-bar">
+    <div class="rcount" id="rcount"></div>
+    <select class="fselect" id="sortSelect">
+      <option value="">정렬: 기본</option>
+      <option value="예산현액(A)-desc">예산현액 많은순</option>
+      <option value="예산현액(A)-asc">예산현액 적은순</option>
+      <option value="집행률(B/A)-desc">집행률 높은순</option>
+      <option value="집행률(B/A)-asc">집행률 낮은순</option>
+      <option value="예산잔액-desc">잔액 많은순</option>
+    </select>
+  </div>
+
+  <div class="table-container">
+    <table id="tbl">
+      <thead><tr>
+        <th data-col="세부사업">세부사업</th>
+        <th data-col="세부항목">세부항목</th>
+        <th data-col="원가통계비목">원가통계비목</th>
+        <th data-col="산출내역">산출내역</th>
+        <th data-col="예산현액(A)">예산현액(A)</th>
+        <th data-col="원인행위액(B)">원인행위액(B)</th>
+        <th data-col="집행률(B/A)">집행률</th>
+        <th data-col="예산잔액">예산잔액</th>
+        <th data-col="지급액(C)">지급액(C)</th>
+        <th data-col="세부항목담당자">담당자</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="emptyEl" style="display:none" class="empty">
+      <div class="ei">🔎</div>
+      <h3>검색 결과가 없습니다</h3>
+      <p>다른 검색어나 필터를 시도해보세요</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── State ── */
+let DATA = [], filtered = [], query = '', selCat = '', selPerson = '', sortCol = null, sortDir = 'asc';
+
+/* ── Built-in 2026 data ── */
+const BUILTIN = [{"세부사업":"교직원역량강화","세부항목":"교직원연수","원가통계비목":"교직원복지비","산출내역":"교직원워크숍","예산액":1200000,"증감액":0,"예산현액(A)":1200000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1200000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1200000,"정산재원":0,"일반재원":3310000,"세부항목담당자":"공미경,류하나,문진아"},{"세부사업":"교직원역량강화","세부항목":"교직원연수","원가통계비목":"교직원복지비","산출내역":"교직원연수경비","예산액":800000,"증감액":0,"예산현액(A)":800000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":800000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":800000,"정산재원":0,"일반재원":3310000,"세부항목담당자":"공미경,류하나,문진아"},{"세부사업":"교직원역량강화","세부항목":"교직원연수","원가통계비목":"교직원복지비","산출내역":"산업안전보건교육비","예산액":110000,"증감액":0,"예산현액(A)":110000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":110000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":110000,"정산재원":0,"일반재원":3310000,"세부항목담당자":"공미경,류하나,문진아"},{"세부사업":"교직원역량강화","세부항목":"교직원연수","원가통계비목":"일반업무추진비","산출내역":"[사업]교직원워크숍식비","예산액":1200000,"증감액":0,"예산현액(A)":1200000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1200000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1200000,"정산재원":0,"일반재원":3310000,"세부항목담당자":"공미경,류하나,문진아"},{"세부사업":"교직원역량강화","세부항목":"직무연수","원가통계비목":"교직원복지비","산출내역":"교원직무연수","예산액":2700000,"증감액":0,"예산현액(A)":2700000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2700000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2700000,"정산재원":0,"일반재원":3450000,"세부항목담당자":"류하나,문진아,이형옥"},{"세부사업":"교직원역량강화","세부항목":"직무연수","원가통계비목":"교직원복지비","산출내역":"행정직원직무연수","예산액":450000,"증감액":0,"예산현액(A)":450000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":450000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":450000,"정산재원":0,"일반재원":3450000,"세부항목담당자":"류하나,문진아,이형옥"},{"세부사업":"교직원역량강화","세부항목":"직무연수","원가통계비목":"교직원복지비","산출내역":"공무직원직무연수","예산액":300000,"증감액":0,"예산현액(A)":300000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":300000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":300000,"정산재원":0,"일반재원":3450000,"세부항목담당자":"류하나,문진아,이형옥"},{"세부사업":"교직원복지","세부항목":"퇴임식행사","원가통계비목":"일반수용비","산출내역":"퇴임식행사용품","예산액":800000,"증감액":0,"예산현액(A)":800000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":800000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":800000,"정산재원":0,"일반재원":800000,"세부항목담당자":"문진아"},{"세부사업":"교직원복지","세부항목":"교직원체육행사","원가통계비목":"교직원복지비","산출내역":"교직원체육대회물품","예산액":1000000,"증감액":0,"예산현액(A)":1000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1000000,"정산재원":0,"일반재원":1000000,"세부항목담당자":"류하나,문진아,우세종"},{"세부사업":"교직원복지","세부항목":"교직원문화행사","원가통계비목":"교직원복지비","산출내역":"교직원생일기념품","예산액":1200000,"증감액":0,"예산현액(A)":1200000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1200000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1200000,"정산재원":0,"일반재원":1200000,"세부항목담당자":"문진아"},{"세부사업":"교직원복지","세부항목":"교직원복지지원","원가통계비목":"교직원복지비","산출내역":"교원안심번호(투넘버)서비스이용료","예산액":1200000,"증감액":0,"예산현액(A)":1200000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1200000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1200000,"정산재원":0,"일반재원":2100000,"세부항목담당자":"류하나,문진아"},{"세부사업":"교직원복지","세부항목":"교직원복지지원","원가통계비목":"교직원복지비","산출내역":"특근매식비","예산액":900000,"증감액":0,"예산현액(A)":900000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":900000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":900000,"정산재원":0,"일반재원":2100000,"세부항목담당자":"류하나,문진아"},{"세부사업":"교직원대체인건비","세부항목":"기간제교원인건비","원가통계비목":"운영수당","산출내역":"교무업무경감강사수당","예산액":5472000,"증감액":0,"예산현액(A)":5472000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5472000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5472000,"정산재원":0,"일반재원":5472000,"세부항목담당자":"문진아"},{"세부사업":"학교급식운영","세부항목":"급식재료구입비","원가통계비목":"급식용식재료비","산출내역":"급식공개의날식재료비(기본)","예산액":320000,"증감액":0,"예산현액(A)":320000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":320000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":320000,"정산재원":148619000,"일반재원":320000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식재료구입비","원가통계비목":"급식용식재료비","산출내역":"급식용식재료비(학생)","예산액":118834000,"증감액":0,"예산현액(A)":118834000,"지출품의액":15460710,"원인행위액(B)":13980000,"집행률(B/A)":11.76,"예산잔액":104854000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":118834000,"정산재원":148619000,"일반재원":320000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식재료구입비","원가통계비목":"급식용식재료비","산출내역":"급식용식재료비(교직원)","예산액":29785000,"증감액":0,"예산현액(A)":29785000,"지출품의액":2399980,"원인행위액(B)":2350000,"집행률(B/A)":7.89,"예산잔액":27435000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":29785000,"정산재원":148619000,"일반재원":320000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식운영비","원가통계비목":"기간제근로자인건비","산출내역":"급식대체인력(기본)","예산액":1409000,"증감액":0,"예산현액(A)":1409000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1409000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1409000,"정산재원":25797000,"일반재원":3409000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식운영비","원가통계비목":"일반수용비","산출내역":"소모품","예산액":15773000,"증감액":0,"예산현액(A)":15773000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":15773000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":15773000,"정산재원":25797000,"일반재원":3409000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식운영비","원가통계비목":"일반수용비","산출내역":"청소용역","예산액":2824000,"증감액":0,"예산현액(A)":2824000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2824000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2824000,"정산재원":25797000,"일반재원":3409000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식운영비","원가통계비목":"연료비","산출내역":"도시가스요금","예산액":5000000,"증감액":0,"예산현액(A)":5000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5000000,"정산재원":25797000,"일반재원":3409000,"세부항목담당자":"이형옥"},{"세부사업":"학교급식운영","세부항목":"급식운영비","원가통계비목":"교직원복지비","산출내역":"위생용품","예산액":2000000,"증감액":0,"예산현액(A)":2000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2000000,"정산재원":25797000,"일반재원":3409000,"세부항목담당자":"이형옥"},{"세부사업":"학생및교직원보건안전관리","세부항목":"응급학생구호","원가통계비목":"학생복지비","산출내역":"응급학생후송비","예산액":50000,"증감액":0,"예산현액(A)":50000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":50000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":50000,"정산재원":0,"일반재원":50000,"세부항목담당자":"이선정"},{"세부사업":"학생및교직원보건안전관리","세부항목":"보건실운영","원가통계비목":"일반수용비","산출내역":"구급약품","예산액":1000000,"증감액":0,"예산현액(A)":1000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1000000,"정산재원":0,"일반재원":2560000,"세부항목담당자":"이선정"},{"세부사업":"학교환경위생관리","세부항목":"학교먹는물관리","원가통계비목":"일반수용비","산출내역":"정수기유지관리비","예산액":1128000,"증감액":0,"예산현액(A)":1128000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1128000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1128000,"정산재원":0,"일반재원":1128000,"세부항목담당자":"문진아"},{"세부사업":"학생복지운영","세부항목":"졸업앨범","원가통계비목":"학생복지비","산출내역":"졸업앨범비","예산액":4845000,"증감액":0,"예산현액(A)":4845000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":4845000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":4845000,"정산재원":4845000,"일반재원":0,"세부항목담당자":"문진아"},{"세부사업":"학생복지운영","세부항목":"체육복구입비지원","원가통계비목":"학생복지비","산출내역":"신입생체육복","예산액":5088000,"증감액":0,"예산현액(A)":5088000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5088000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5088000,"정산재원":0,"일반재원":5088000,"세부항목담당자":"류하나,황훈희"},{"세부사업":"교과활동지원","세부항목":"교사용교과서(지도서)","원가통계비목":"일반수용비","산출내역":"교사용지도서구입비","예산액":1000000,"증감액":0,"예산현액(A)":1000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1000000,"정산재원":0,"일반재원":1000000,"세부항목담당자":"류하나,문진아,정영선"},{"세부사업":"교과활동지원","세부항목":"공존교실강사활용지원","원가통계비목":"운영수당","산출내역":"공존교실강사수당","예산액":22400000,"증감액":0,"예산현액(A)":22400000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":22400000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":22400000,"정산재원":0,"일반재원":24240000,"세부항목담당자":"류하나,문진아,우세종,임정숙"},{"세부사업":"국어 교과활동","세부항목":"국어교과운영","원가통계비목":"교육운영비","산출내역":"국어과교재교구","예산액":400000,"증감액":0,"예산현액(A)":400000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":400000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":400000,"정산재원":0,"일반재원":400000,"세부항목담당자":"문진아,황지혜,황훈희"},{"세부사업":"사회 교과활동","세부항목":"사회교과운영","원가통계비목":"교육운영비","산출내역":"사회과교재교구","예산액":480000,"증감액":0,"예산현액(A)":480000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":480000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":480000,"정산재원":0,"일반재원":780000,"세부항목담당자":"류하나,문진아,우세종"},{"세부사업":"수학 교과활동","세부항목":"수학교과운영","원가통계비목":"교육운영비","산출내역":"수학과교재교구","예산액":300000,"증감액":0,"예산현액(A)":300000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":300000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":300000,"정산재원":0,"일반재원":300000,"세부항목담당자":"문진아,신승훈,임용선"},{"세부사업":"과학 교과활동","세부항목":"과학교과운영","원가통계비목":"교육운영비","산출내역":"과학교구","예산액":4000000,"증감액":0,"예산현액(A)":4000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":4000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":4000000,"정산재원":0,"일반재원":5800000,"세부항목담당자":"류하나,문진아,이재광,정영선"},{"세부사업":"과학 교과활동","세부항목":"과학교과운영","원가통계비목":"교육운영비","산출내역":"과학실험실습재료","예산액":1600000,"증감액":0,"예산현액(A)":1600000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1600000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1600000,"정산재원":0,"일반재원":5800000,"세부항목담당자":"류하나,문진아,이재광,정영선"},{"세부사업":"체육 교과활동","세부항목":"체육교과운영","원가통계비목":"교육운영비","산출내역":"체육교구","예산액":2500000,"증감액":0,"예산현액(A)":2500000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2500000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2500000,"정산재원":0,"일반재원":2500000,"세부항목담당자":"김명진,문진아"},{"세부사업":"예술 교과활동","세부항목":"미술교과운영","원가통계비목":"교육운영비","산출내역":"미술실습재료","예산액":1600000,"증감액":0,"예산현액(A)":1600000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1600000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1600000,"정산재원":0,"일반재원":1600000,"세부항목담당자":"문진아,황지혜"},{"세부사업":"외국어 교과활동","세부항목":"영어교과운영","원가통계비목":"교육운영비","산출내역":"영어과교재교구","예산액":500000,"증감액":0,"예산현액(A)":500000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":500000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":500000,"정산재원":0,"일반재원":1300000,"세부항목담당자":"공미경,김수정,류하나,문진아"},{"세부사업":"자율·자치활동","세부항목":"학생회활동지원","원가통계비목":"학생복지비","산출내역":"학생자치회운영","예산액":2000000,"증감액":0,"예산현액(A)":2000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2000000,"정산재원":0,"일반재원":2800000,"세부항목담당자":"문진아,황지혜"},{"세부사업":"자율·자치활동","세부항목":"학급운영비","원가통계비목":"교육운영비","산출내역":"1학년학급운영비","예산액":1000000,"증감액":0,"예산현액(A)":1000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1000000,"정산재원":0,"일반재원":5754000,"세부항목담당자":"류하나,문진아,우세종"},{"세부사업":"현장체험학습활동","세부항목":"수학여행","원가통계비목":"교육운영비","산출내역":"수학여행비(2학년,기본)","예산액":12750000,"증감액":0,"예산현액(A)":12750000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":12750000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":12750000,"정산재원":6630000,"일반재원":12750000,"세부항목담당자":"류하나,문진아,임수민,임용선"},{"세부사업":"동아리활동","세부항목":"학교스포츠클럽활동","원가통계비목":"교육운영비","산출내역":"스포츠클럽운영비","예산액":1600000,"증감액":0,"예산현액(A)":1600000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1600000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1600000,"정산재원":0,"일반재원":1600000,"세부항목담당자":"김명진,류하나,문진아"},{"세부사업":"독서활동운영","세부항목":"도서구입","원가통계비목":"도서구입비","산출내역":"도서","예산액":5800000,"증감액":0,"예산현액(A)":5800000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5800000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5800000,"정산재원":0,"일반재원":5800000,"세부항목담당자":"류하나,문진아,성지은"},{"세부사업":"교무학사운영","세부항목":"학교자율사업운영","원가통계비목":"운영수당","산출내역":"학교폭력책임교사경감강사수당","예산액":5700000,"증감액":0,"예산현액(A)":5700000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5700000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5700000,"정산재원":0,"일반재원":16000000,"세부항목담당자":"류하나,문진아,우세종,황지혜"},{"세부사업":"교무학사운영","세부항목":"학교자율사업운영","원가통계비목":"교육운영비","산출내역":"어울림인성프로그램운영비","예산액":4000000,"증감액":0,"예산현액(A)":4000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":4000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":4000000,"정산재원":0,"일반재원":16000000,"세부항목담당자":"류하나,문진아,우세종,황지혜"},{"세부사업":"학교시설장비유지","세부항목":"공공요금및제세","원가통계비목":"전기요금","산출내역":"전기요금","예산액":41760000,"증감액":0,"예산현액(A)":41760000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":41760000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":41760000,"정산재원":0,"일반재원":50238000,"세부항목담당자":"문진아"},{"세부사업":"학교시설장비유지","세부항목":"시설관리용역","원가통계비목":"일반수용비","산출내역":"전기안전관리위탁용역료","예산액":3468000,"증감액":0,"예산현액(A)":3468000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":3468000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":3468000,"정산재원":0,"일반재원":16002000,"세부항목담당자":"문진아"},{"세부사업":"학교시설장비유지","세부항목":"시설일반관리","원가통계비목":"일반수용비","산출내역":"시설물소규모수선","예산액":12307000,"증감액":0,"예산현액(A)":12307000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":12307000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":12307000,"정산재원":0,"일반재원":20552000,"세부항목담당자":"문진아"},{"세부사업":"학생생활상담지도","세부항목":"배움터지킴이운영","원가통계비목":"일반수용비","산출내역":"배움터지킴이활동비","예산액":8170000,"증감액":0,"예산현액(A)":8170000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":8170000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":8170000,"정산재원":0,"일반재원":8270000,"세부항목담당자":"류하나,문진아,신승훈"},{"세부사업":"학교폭력예방","세부항목":"CCTV설치및운영비","원가통계비목":"일반수용비","산출내역":"전용회선통신비","예산액":1270000,"증감액":0,"예산현액(A)":1270000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1270000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1270000,"정산재원":0,"일반재원":1270000,"세부항목담당자":"문진아"},{"세부사업":"교육환경개선","세부항목":"교단환경개선","원가통계비목":"비품구입비","산출내역":"교단환경개선물품","예산액":15261000,"증감액":0,"예산현액(A)":15261000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":15261000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":15261000,"정산재원":0,"일반재원":15261000,"세부항목담당자":"문진아"},{"세부사업":"부서기본운영","세부항목":"직책급업무수행","원가통계비목":"직책급업무수행경비","산출내역":"학교장직책급업무수행비","예산액":3000000,"증감액":0,"예산현액(A)":3000000,"지출품의액":0,"원인행위액(B)":250000,"집행률(B/A)":8.33,"예산잔액":2750000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":3000000,"정산재원":0,"일반재원":3000000,"세부항목담당자":"문진아"},{"세부사업":"부서기본운영","세부항목":"사무용품구입","원가통계비목":"일반수용비","산출내역":"복사용지","예산액":1600000,"증감액":0,"예산현액(A)":1600000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1600000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1600000,"정산재원":0,"일반재원":4359000,"세부항목담당자":"류하나,문진아"},{"세부사업":"부서기본운영","세부항목":"교직원여비지원","원가통계비목":"여비","산출내역":"관내여비","예산액":5000000,"증감액":0,"예산현액(A)":5000000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":5000000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":5000000,"정산재원":0,"일반재원":26060000,"세부항목담당자":"문진아"},{"세부사업":"부서기본운영","세부항목":"교직원여비지원","원가통계비목":"여비","산출내역":"관외여비","예산액":20160000,"증감액":0,"예산현액(A)":20160000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":20160000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":20160000,"정산재원":0,"일반재원":26060000,"세부항목담당자":"문진아"},{"세부사업":"행정지원인력운용","세부항목":"교육공무직인건비자체부담금","원가통계비목":"공무직인건비","산출내역":"교육공무직시간외수당","예산액":2520000,"증감액":0,"예산현액(A)":2520000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":2520000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":2520000,"정산재원":0,"일반재원":2520000,"세부항목담당자":"문진아"},{"세부사업":"예비비","세부항목":"예비비","원가통계비목":"예비비","산출내역":"예비비","예산액":1891000,"증감액":0,"예산현액(A)":1891000,"지출품의액":0,"원인행위액(B)":0,"집행률(B/A)":0,"예산잔액":1891000,"지출결의액":0,"지급액(C)":0,"집행률(C/A)":0,"지출잔액(A-C)":1891000,"정산재원":0,"일반재원":1891000,"세부항목담당자":"문진아"}];
+
+/* ── File upload ── */
+function bindFileInput(id) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('click', () => document.getElementById('fileInput').click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+bindFileInput('fileInput');
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      parseAndLoad(raw, file.name);
+    } catch(err) { alert('파일 오류: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseAndLoad(rows, fileName) {
+  let hdr = -1;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    if (String(rows[i][0]).trim() === '세부사업') { hdr = i; break; }
+  }
+  if (hdr < 0) hdr = 2;
+  const headers = rows[hdr].map(h => String(h).trim());
+  const numCols = ['예산액','증감액','예산현액(A)','지출품의액','원인행위액(B)','집행률(B/A)','예산잔액','지출결의액','지급액(C)','집행률(C/A)','지출잔액(A-C)','정산재원','일반재원'];
+  const records = [];
+  for (let i = hdr + 1; i < rows.length; i++) {
+    const rec = {};
+    headers.forEach((h, j) => { rec[h] = rows[i][j] ?? ''; });
+    const cat = String(rec['세부사업'] || '');
+    if (!cat || /소\s*계|합\s*계|총/.test(cat)) continue;
+    numCols.forEach(k => { const v = parseFloat(rec[k]); rec[k] = isNaN(v) ? 0 : v; });
+    records.push(rec);
+  }
+  DATA = records;
+  loadUI(fileName);
+}
+
+/* ── Init with built-in data ── */
+window.addEventListener('DOMContentLoaded', () => {
+  DATA = BUILTIN;
+  loadUI('2026_사업관리카드(기본 데이터)');
+  bindFileInput('fileInput');
+});
+
+function loadUI(fileName) {
+  document.getElementById('dropSection').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+
+  // Reset filters
+  query = ''; selCat = ''; selPerson = ''; sortCol = null; sortDir = 'asc';
+  const si = document.getElementById('searchInput'); if (si) si.value = '';
+
+  // Header right
+  const hr = document.getElementById('headerRight');
+  const totalB = DATA.reduce((s,r) => s+(r['예산현액(A)']||0), 0);
+  hr.innerHTML = `
+    <div class="stat-pill"><strong>총예산</strong>${fmtShort(totalB)}</div>
+    <div class="stat-pill"><strong>${DATA.length}건</strong> 로드됨</div>
+    <span class="file-tag">✅ ${escHtml(fileName)}</span>
+    <label class="upload-btn secondary" for="fileInputH" style="font-size:12px;padding:6px 12px">📂 파일 교체</label>
+    <input type="file" id="fileInputH" accept=".xlsx,.xls" style="display:none">
+  `;
+  document.getElementById('fileInputH').addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+
+  // Summary
+  const totalExec = DATA.reduce((s,r) => s+(r['원인행위액(B)']||0), 0);
+  const totalBal  = DATA.reduce((s,r) => s+(r['예산잔액']||0), 0);
+  const cats = [...new Set(DATA.map(r=>r['세부사업']).filter(Boolean))];
+  const avgE = totalB > 0 ? (totalExec/totalB*100).toFixed(1) : '0.0';
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="card"><div class="lbl">총 예산현액</div><div class="val">${fmtShort(totalB)}</div><div class="sub">${fmtWon(totalB)}</div></div>
+    <div class="card"><div class="lbl">원인행위액</div><div class="val">${fmtShort(totalExec)}</div><div class="sub">집행률 ${avgE}%</div></div>
+    <div class="card"><div class="lbl">예산잔액</div><div class="val">${fmtShort(totalBal)}</div><div class="sub">${fmtWon(totalBal)}</div></div>
+    <div class="card"><div class="lbl">사업/항목수</div><div class="val">${cats.length}개</div><div class="sub">총 ${DATA.length}개 항목</div></div>
+  `;
+
+  // Category chips
+  const cc = document.getElementById('catChips');
+  cc.innerHTML = `<span class="chip active" data-cat="">전체</span>` +
+    cats.map(c => `<span class="chip" data-cat="${escHtml(c)}">${escHtml(c)}</span>`).join('');
+  cc.onclick = e => {
+    const t = e.target.closest('.chip'); if(!t) return;
+    selCat = t.dataset.cat;
+    cc.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === selCat));
+    render();
+  };
+
+  // Person filter
+  const pf = document.getElementById('personFilter');
+  const persons = [...new Set(DATA.flatMap(r => (r['세부항목담당자']||'').split(',').map(p=>p.trim())))].filter(Boolean).sort();
+  pf.innerHTML = '<option value="">전체</option>' + persons.map(p=>`<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
+  pf.onchange = () => { selPerson = pf.value; render(); };
+
+  // Sort
+  const ss = document.getElementById('sortSelect');
+  ss.value = '';
+  ss.onchange = e => {
+    const v = e.target.value;
+    if (!v) { sortCol = null; } else { const p = v.split('-'); sortCol = p[0]; sortDir = p[1]; }
+    render();
+  };
+
+  // Search
+  const si2 = document.getElementById('searchInput');
+  si2.oninput = e => { query = e.target.value.trim(); render(); };
+
+  // Column sort
+  document.querySelectorAll('thead th[data-col]').forEach(th => {
+    th.onclick = () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortCol = col; sortDir = 'asc'; }
+      ss.value = '';
+      document.querySelectorAll('thead th').forEach(t => t.classList.remove('sorted','sorted-asc','sorted-desc'));
+      th.classList.add('sorted', sortDir==='asc'?'sorted-asc':'sorted-desc');
+      render();
+    };
+  });
+
+  render();
+}
+
+/* ── Render ── */
+function render() {
+  const q = query.toLowerCase();
+  filtered = DATA.filter(r => {
+    if (selCat && r['세부사업'] !== selCat) return false;
+    if (selPerson && !(r['세부항목담당자']||'').split(',').map(p=>p.trim()).includes(selPerson)) return false;
+    if (!q) return true;
+    return ['세부사업','세부항목','원가통계비목','산출내역','세부항목담당자'].some(k => String(r[k]||'').toLowerCase().includes(q));
+  });
+
+  if (sortCol) {
+    filtered.sort((a,b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      if (typeof av === 'number') return sortDir==='asc' ? av-bv : bv-av;
+      return sortDir==='asc' ? String(av||'').localeCompare(String(bv||''),'ko') : String(bv||'').localeCompare(String(av||''),'ko');
+    });
+  }
+
+  const fb = filtered.reduce((s,r)=>s+(r['예산현액(A)']||0),0);
+  document.getElementById('rcount').innerHTML = `검색결과 <span>${filtered.length.toLocaleString()}</span>건 &nbsp;·&nbsp; 예산현액 합계 <span>${fmtWon(fb)}</span>`;
+
+  const tbody = document.getElementById('tbody');
+  const emptyEl = document.getElementById('emptyEl');
+  const tbl = document.getElementById('tbl');
+
+  if (filtered.length === 0) {
+    emptyEl.style.display = 'block'; tbl.style.display = 'none'; tbody.innerHTML = ''; return;
+  }
+  emptyEl.style.display = 'none'; tbl.style.display = '';
+
+  tbody.innerHTML = filtered.map(r => {
+    const er = r['집행률(B/A)'] || 0;
+    const fc = er >= 70 ? 'hi' : er >= 30 ? 'md' : '';
+    const pp = (r['세부항목담당자']||'').split(',').map(p=>p.trim()).filter(Boolean);
+    return `<tr>
+      <td><span class="badge bc">${hl(r['세부사업'],q)}</span></td>
+      <td><span class="badge bi">${hl(r['세부항목'],q)}</span></td>
+      <td style="color:var(--text-muted);font-size:12px">${hl(r['원가통계비목'],q)}</td>
+      <td>${hl(r['산출내역'],q)}</td>
+      <td class="num ${r['예산현액(A)']>0?'pos':'zero'}">${fn(r['예산현액(A)'])}</td>
+      <td class="num ${r['원인행위액(B)']>0?'pos':'zero'}">${fn(r['원인행위액(B)'])}</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill ${fc}" style="width:${Math.min(er,100)}%"></div></div><span class="prog-pct">${er>0?er.toFixed(1)+'%':'-'}</span></div></td>
+      <td class="num ${r['예산잔액']>0?'pos':'zero'}">${fn(r['예산잔액'])}</td>
+      <td class="num ${r['지급액(C)']>0?'pos':'zero'}">${fn(r['지급액(C)'])}</td>
+      <td>${pp.map(p=>`<span class="ptag">${hl(p,q)}</span>`).join('')}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Helpers ── */
+function hl(text, q) {
+  if (!q) return escHtml(text);
+  return escHtml(text).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<span class="hl">$1</span>');
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fn(n) { const v = Number(n||0); return isNaN(v) ? '-' : v.toLocaleString('ko-KR'); }
+function fmtWon(n) { return '₩'+Number(n||0).toLocaleString('ko-KR'); }
+function fmtShort(n) {
+  n = Number(n||0);
+  if (n >= 1e8) return (n/1e8).toFixed(1)+'억';
+  if (n >= 1e4) return Math.round(n/1e4)+'만';
+  return fmtWon(n);
+}
+</script>
+</body>
+</html>
