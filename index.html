@@ -8,265 +8,233 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg: #ffffff;
+    --border: #e2e6ea;
     --surface: #f8f9fb;
     --surface2: #f0f2f5;
-    --border: #e2e6ea;
     --accent: #2563eb;
     --accent-soft: #eff4ff;
     --accent-glow: rgba(37,99,235,0.10);
-    --green: #16a34a;
-    --yellow: #ca8a04;
     --text: #111827;
     --text-muted: #6b7280;
     --text-dim: #9ca3af;
-    --header-h: 62px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans KR', sans-serif; background: #fff; color: var(--text); min-height: 100vh; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Noto Sans KR',sans-serif; background:#fff; color:#111827; min-height:100vh; }
 
-  /* ── Header ── */
-  .header {
-    background: #fff;
-    border-bottom: 1.5px solid var(--border);
-    padding: 14px 32px;
-    display: flex; align-items: center; gap: 14px;
-    position: sticky; top: 0; z-index: 200;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  /* ───── HEADER ───── */
+  #mainHeader {
+    background:#fff; border-bottom:1.5px solid var(--border);
+    padding:13px 28px; display:flex; align-items:center; gap:12px;
+    position:sticky; top:0; z-index:500;
+    box-shadow:0 1px 6px rgba(0,0,0,0.07);
   }
-  .header-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-  .header-title h1 { font-size: 15px; font-weight: 700; }
-  .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .stat-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-  .stat-pill strong { color: var(--text); font-weight: 600; margin-right: 3px; }
+  .hicon { width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+  .htitle h1 { font-size:14px;font-weight:700; }
+  .htitle p  { font-size:11px;color:var(--text-muted);margin-top:1px; }
+  .hright { margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+  .stat-pill { background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:12px;color:var(--text-muted);white-space:nowrap; }
+  .stat-pill strong { color:#111827;font-weight:600;margin-right:2px; }
+  .file-tag { display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:4px 11px;font-size:11px;color:#15803d;font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .btn { display:inline-flex;align-items:center;gap:5px;border:none;border-radius:8px;padding:7px 13px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap; }
+  .btn-primary { background:var(--accent);color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-gray   { background:#6b7280;color:#fff; }
+  .btn-gray:hover   { background:#4b5563; }
 
-  /* ── Upload button ── */
-  .upload-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    padding: 7px 14px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: background 0.15s; white-space: nowrap;
-  }
-  .upload-btn:hover { background: #1d4ed8; }
-  .upload-btn.secondary { background: #6b7280; }
-  .upload-btn.secondary:hover { background: #4b5563; }
-  #fileInput, #fileInputHeader { display: none; }
+  /* ───── DROP ZONE ───── */
+  #dropSection { padding:32px; }
+  .drop-zone { border:2px dashed var(--border);border-radius:14px;background:var(--surface);padding:52px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s; }
+  .drop-zone:hover,.drop-zone.over { border-color:var(--accent);background:var(--accent-soft); }
+  .drop-zone .dzi { font-size:44px;margin-bottom:12px; }
+  .drop-zone h3 { font-size:16px;font-weight:600;margin-bottom:6px; }
+  .drop-zone p  { font-size:13px;color:var(--text-muted); }
+  .drop-zone .hint { font-size:11px;color:var(--text-dim);margin-top:10px; }
 
-  /* ── Drop zone ── */
-  .drop-zone {
-    margin: 28px 32px 0;
-    border: 2px dashed var(--border);
-    border-radius: 14px;
-    background: var(--surface);
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
-  .drop-zone .dz-icon { font-size: 44px; margin-bottom: 12px; }
-  .drop-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-  .drop-zone p { font-size: 13px; color: var(--text-muted); }
-  .drop-zone .hint { font-size: 11px; color: var(--text-dim); margin-top: 10px; }
+  /* ───── SUMMARY CARDS ───── */
+  .summary-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px;padding:18px 28px 14px; }
+  .card { background:#fff;border:1.5px solid var(--border);border-radius:11px;padding:15px;box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  .card .lbl { font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px; }
+  .card .val { font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#111827; }
+  .card .sub { font-size:11px;color:var(--text-muted);margin-top:3px; }
 
-  /* ── File loaded tag ── */
-  .file-tag { display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:7px; padding:5px 12px; font-size:12px; color:#15803d; font-weight:600; }
-
-  /* ── Summary cards ── */
-  .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; padding: 20px 32px 16px; }
-  .card { background:#fff; border:1.5px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
-  .card .lbl { font-size:11px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
-  .card .val { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:600; }
-  .card .sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
-
-  /* ── Search ── */
-  .search-area { padding: 0 32px; }
-  .search-box { position:relative; margin-bottom:12px; }
-  .search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; pointer-events:none; }
-  .search-input {
-    width:100%; background:#fff; border:1.5px solid var(--border); border-radius:10px;
-    padding:11px 14px 11px 40px; font-family:'Noto Sans KR',sans-serif; font-size:14px; color:var(--text);
-    outline:none; transition:border-color .2s, box-shadow .2s; box-shadow:0 1px 3px rgba(0,0,0,0.04);
-  }
-  .search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  /* ───── SEARCH / FILTER ───── */
+  .search-area { padding:0 28px; }
+  .search-box { position:relative;margin-bottom:11px; }
+  .sicon { position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;font-size:14px; }
+  .search-input { width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px 11px 38px;font-family:inherit;font-size:14px;color:#111827;outline:none;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  .search-input:focus { border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow); }
   .search-input::placeholder { color:var(--text-dim); }
+  .filters { display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px; }
+  .flabel { font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap; }
+  .chip-group { display:flex;gap:5px;flex-wrap:wrap; }
+  .chip { padding:4px 10px;border-radius:14px;font-size:12px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap; }
+  .chip:hover { border-color:var(--accent);color:var(--accent); }
+  .chip.active { background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600; }
+  .fselect { background:#fff;border:1.5px solid var(--border);border-radius:7px;padding:5px 10px;font-family:inherit;font-size:13px;color:#111827;outline:none;cursor:pointer; }
 
-  /* ── Filters ── */
-  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
-  .flabel { font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap; }
-  .chip-group { display:flex; gap:5px; flex-wrap:wrap; }
-  .chip { padding:4px 10px; border-radius:14px; font-size:12px; border:1.5px solid var(--border); background:#fff; color:var(--text-muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
-  .chip:hover { border-color:var(--accent); color:var(--accent); }
-  .chip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
-  .fselect { background:#fff; border:1.5px solid var(--border); border-radius:7px; padding:5px 10px; font-family:'Noto Sans KR',sans-serif; font-size:13px; color:var(--text); outline:none; cursor:pointer; }
-  .fselect:focus { border-color:var(--accent); }
+  /* ───── RESULTS BAR ───── */
+  .results-bar { display:flex;align-items:center;justify-content:space-between;padding:0 28px;margin-bottom:8px; }
+  .rcount { font-size:13px;color:var(--text-muted); }
+  .rcount span { color:var(--accent);font-weight:700; }
+  .memo-badge { display:inline-flex;align-items:center;gap:4px;background:#fef9c3;border:1px solid #fcd34d;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;white-space:nowrap; }
+  .memo-badge:hover { background:#fef3c7; }
 
-  /* ── Results bar ── */
-  .results-bar { display:flex; align-items:center; justify-content:space-between; padding:0 32px; margin-bottom:10px; }
-  .rcount { font-size:13px; color:var(--text-muted); }
-  .rcount span { color:var(--accent); font-weight:700; }
+  /* ───── TABLE ─────
+     핵심: table-wrap 은 overflow-x:auto 만, 별도 border/radius.
+     thead th 는 position:sticky; top:0 → table 자체 기준 sticky.
+     페이지 sticky header 와는 다른 축.
+     → 실제로 "테이블 헤더" 가 스크롤시 따라오려면
+       table-wrap 의 max-height + overflow-y:auto 가 필요.
+  ───── */
+  .table-outer { padding:0 28px 40px; }
 
-  /* ── Table ── */
-  /* outer padding만 담당, overflow는 제거 → sticky thead가 정상 작동 */
-  .table-container { padding:0 32px 40px; }
-  /* 가로 스크롤은 별도 wrapper가 처리 */
-  .table-scroll { overflow-x:auto; border:1.5px solid var(--border); border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
-  table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; background:#fff; }
+  /* 테이블 래퍼: 가로 스크롤 + 세로 스크롤 모두 여기서 */
+  .table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 260px); /* 뷰포트에서 상단 UI 높이 제외 */
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  table { width:100%;border-collapse:collapse;font-size:13px;background:#fff; }
+
+  /* thead sticky: table-wrap 안에서 top:0 으로 고정 */
   thead th {
-    background:var(--surface); padding:10px 13px; text-align:left; font-weight:700;
-    color:#111827; font-size:12px; border-bottom:1.5px solid var(--border);
-    white-space:nowrap; cursor:pointer; user-select:none;
-    position:sticky;
-    top: var(--header-h);
-    z-index:10;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: #111827;
+    font-size: 12px;
+    border-bottom: 1.5px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
   }
   thead th:hover { color:var(--accent); }
   thead th.sorted { color:var(--accent); }
-  thead th::after { content:' ↕'; opacity:.2; font-size:10px; }
-  thead th.sorted-asc::after { content:' ↑'; opacity:1; }
-  thead th.sorted-desc::after { content:' ↓'; opacity:1; }
-  tbody tr { border-bottom:1px solid #f0f2f5; transition:background .1s; }
+  thead th::after { content:' ↕';opacity:.2;font-size:10px; }
+  thead th.sorted-asc::after  { content:' ↑';opacity:1; }
+  thead th.sorted-desc::after { content:' ↓';opacity:1; }
+  /* 마지막 th(메모)는 정렬 불필요 */
+  thead th.no-sort::after { content:''; }
+
+  tbody tr { border-bottom:1px solid #f0f2f5;transition:background .1s; }
   tbody tr:last-child { border-bottom:none; }
   tbody tr:hover { background:#f5f8ff; }
-  tbody td { padding:9px 13px; vertical-align:middle; color:#111827; }
-  td.num { font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right; white-space:nowrap; color:#111827; }
-  td.num.pos { color:#111827; }
-  td.num.zero { color:#6b7280; }
+  tbody td { padding:9px 12px;vertical-align:middle;color:#111827; }
 
-  /* 소계 행 스타일 */
-  tbody tr.subtotal-row { background:#fffbeb !important; }
-  tbody tr.subtotal-row:hover { background:#fef9c3 !important; }
-  tbody tr.subtotal-row td { font-weight:600; color:#111827; border-top:1.5px solid #fcd34d; }
+  /* 소계 행 */
+  tbody tr.subtotal { background:#fffbeb !important; }
+  tbody tr.subtotal:hover { background:#fef9c3 !important; }
+  tbody tr.subtotal td { font-weight:700;color:#111827;border-top:1.5px solid #fde68a; }
 
-  .badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:600; white-space:nowrap; color:#111827; }
-  .bc { background:#eff6ff; color:#111827; border:1px solid #bfdbfe; }
-  .bi { background:#f0fdf4; color:#111827; border:1px solid #bbf7d0; }
+  td.num { font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;white-space:nowrap;color:#111827; }
+  td.num.zero { color:#9ca3af; }
 
-  .prog-wrap { display:flex; align-items:center; gap:7px; min-width:90px; }
-  .prog-bar { height:5px; background:var(--surface2); border-radius:3px; flex:1; overflow:hidden; }
-  .prog-fill { height:100%; border-radius:3px; background:var(--accent); }
-  .prog-fill.hi { background:var(--green); }
-  .prog-fill.md { background:var(--yellow); }
-  .prog-pct { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); min-width:34px; text-align:right; }
+  .badge { display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap; }
+  .bc { background:#eff6ff;color:#111827;border:1px solid #bfdbfe; }
+  .bi { background:#f0fdf4;color:#111827;border:1px solid #bbf7d0; }
 
-  .ptag { display:inline-block; padding:2px 5px; background:var(--surface2); border:1px solid var(--border); border-radius:4px; font-size:11px; color:var(--text-muted); margin:1px; }
-  .hl { background:#fef9c3; color:#854d0e; border-radius:2px; padding:0 1px; }
+  .prog-wrap { display:flex;align-items:center;gap:6px;min-width:80px; }
+  .prog-bar  { height:5px;background:var(--surface2);border-radius:3px;flex:1;overflow:hidden; }
+  .prog-fill { height:100%;border-radius:3px;background:var(--accent); }
+  .prog-fill.hi { background:#16a34a; }
+  .prog-fill.md { background:#ca8a04; }
+  .prog-pct  { font-family:'JetBrains Mono',monospace;font-size:11px;color:#111827;min-width:32px;text-align:right; }
 
-  /* ── Empty ── */
-  .empty { text-align:center; padding:70px 32px; }
-  .empty .ei { font-size:44px; margin-bottom:12px; }
-  .empty h3 { font-size:15px; font-weight:500; color:var(--text-muted); }
-  .empty p { font-size:13px; color:var(--text-dim); margin-top:5px; }
+  .ptag { display:inline-block;padding:2px 5px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;font-size:11px;color:#111827;margin:1px; }
+  .hl   { background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px; }
 
-  /* ── Memo button in table ── */
-  .memo-btn {
-    background: none; border: 1.5px solid var(--border); border-radius: 6px;
-    width: 28px; height: 28px; cursor: pointer; font-size: 13px;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: all .15s; color: var(--text-muted);
-    flex-shrink: 0;
-  }
-  .memo-btn:hover { border-color: var(--yellow); background: #fffbeb; color: #92400e; }
-  .memo-btn.has-memo { border-color: #fcd34d; background: #fef9c3; color: #92400e; }
-  .memo-cell { display: flex; align-items: center; gap: 6px; }
+  /* ───── MEMO CELL ───── */
+  .memo-wrap { display:flex;flex-direction:column;gap:3px;min-width:80px;max-width:160px; }
+  .memo-btn { background:none;border:1.5px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0; }
+  .memo-btn:hover { border-color:#fcd34d;background:#fffbeb; }
+  .memo-btn.has { border-color:#fcd34d;background:#fef9c3; }
+  .memo-preview { font-size:11px;color:#92400e;line-height:1.4;word-break:break-all;background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:3px 6px;cursor:pointer;max-width:150px; }
+  .memo-preview:hover { background:#fef9c3; }
 
-  /* ── Memo Modal ── */
-  .memo-overlay {
-    display: none; position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
-    align-items: center; justify-content: center;
-  }
-  .memo-overlay.open { display: flex; }
-  .memo-modal {
-    background: #fff; border-radius: 16px; padding: 24px;
-    width: min(480px, 92vw); box-shadow: 0 20px 60px rgba(0,0,0,0.18);
-    animation: memoIn .2s ease;
-  }
-  @keyframes memoIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
-  .memo-modal-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
-  .memo-modal-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
-  .memo-modal-info { flex: 1; }
-  .memo-modal-info .mm-cat { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
-  .memo-modal-info .mm-name { font-size: 14px; font-weight: 700; }
-  .memo-modal-info .mm-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .memo-modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 2px 6px; border-radius: 5px; transition: background .1s; }
-  .memo-modal-close:hover { background: var(--surface2); }
-  .memo-budget-bar {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 16px; flex-wrap: wrap;
-  }
-  .memo-budget-bar .mbi { text-align: center; }
-  .memo-budget-bar .mbi .mbl { font-size: 10px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
-  .memo-budget-bar .mbi .mbv { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; margin-top: 1px; }
-  .memo-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-  .memo-textarea {
-    width: 100%; min-height: 120px; resize: vertical;
-    border: 1.5px solid var(--border); border-radius: 10px;
-    padding: 10px 13px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
-    color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s;
-    line-height: 1.7;
-  }
-  .memo-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .memo-textarea::placeholder { color: var(--text-dim); }
-  .memo-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 8px; }
-  .memo-footer .mf-left { font-size: 11px; color: var(--text-dim); }
-  .memo-footer .mf-right { display: flex; gap: 7px; }
-  .memo-save-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
-  .memo-save-btn:hover { background: #1d4ed8; }
-  .memo-del-btn { background: #fff; color: #ef4444; border: 1.5px solid #fca5a5; border-radius: 8px; padding: 8px 14px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
-  .memo-del-btn:hover { background: #fef2f2; border-color: #ef4444; }
+  /* ───── EMPTY ───── */
+  .empty { text-align:center;padding:64px 28px; }
+  .empty .ei { font-size:42px;margin-bottom:10px; }
+  .empty h3  { font-size:15px;font-weight:500;color:var(--text-muted); }
+  .empty p   { font-size:13px;color:var(--text-dim);margin-top:4px; }
 
-  /* ── Memo panel (side) hidden ── */
-  .memo-count-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    background: #fef9c3; border: 1px solid #fcd34d; border-radius: 20px;
-    padding: 3px 10px; font-size: 12px; font-weight: 600; color: #92400e;
-    cursor: pointer; transition: all .15s; white-space: nowrap;
-  }
-  .memo-count-badge:hover { background: #fef3c7; }
+  /* ───── MEMO MODAL ───── */
+  .overlay { display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.38);backdrop-filter:blur(3px);align-items:center;justify-content:center; }
+  .overlay.open { display:flex; }
+  .modal { background:#fff;border-radius:16px;padding:24px;width:min(500px,93vw);box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:mIn .18s ease; }
+  @keyframes mIn { from{opacity:0;transform:translateY(14px) scale(.97)} to{opacity:1;transform:none} }
+  .modal-hdr { display:flex;align-items:flex-start;gap:10px;margin-bottom:14px; }
+  .modal-hdr .micon { font-size:22px;flex-shrink:0;margin-top:2px; }
+  .modal-hdr .minfo { flex:1; }
+  .modal-hdr .minfo .mc { font-size:11px;font-weight:600;color:var(--accent);margin-bottom:2px; }
+  .modal-hdr .minfo .mn { font-size:14px;font-weight:700;color:#111827; }
+  .modal-hdr .minfo .ms { font-size:11px;color:var(--text-muted);margin-top:2px; }
+  .modal-close { background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:2px 6px;border-radius:5px; }
+  .modal-close:hover { background:var(--surface2); }
+  .budget-bar { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:18px;flex-wrap:wrap; }
+  .bitem .bl { font-size:10px;color:var(--text-dim);font-weight:600;text-transform:uppercase; }
+  .bitem .bv { font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#111827;margin-top:1px; }
+  .mlabel { font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px; }
+  .mtextarea { width:100%;min-height:120px;resize:vertical;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-family:inherit;font-size:13px;color:#111827;outline:none;transition:border-color .2s,box-shadow .2s;line-height:1.7; }
+  .mtextarea:focus { border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow); }
+  .mtextarea::placeholder { color:var(--text-dim); }
+  .modal-ftr { display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:8px; }
+  .modal-ftr .mfts { font-size:11px;color:var(--text-dim); }
+  .modal-ftr .mftr { display:flex;gap:7px; }
+  .btn-del  { background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:8px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s; }
+  .btn-del:hover { background:#fef2f2;border-color:#ef4444; }
+  .btn-save { background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s; }
+  .btn-save:hover { background:#1d4ed8; }
 
-  @media(max-width:768px) {
-    .header { padding:12px 16px; }
-    .header-right .stat-pill { display:none; }
-    .search-area, .table-container, .results-bar, .summary-cards { padding-left:16px; padding-right:16px; }
-    .drop-zone { margin:16px 16px 0; }
+  @media(max-width:768px){
+    #mainHeader { padding:11px 14px; }
+    .hright .stat-pill { display:none; }
+    .search-area,.table-outer,.results-bar,.summary-cards { padding-left:14px;padding-right:14px; }
+    #dropSection { padding:16px; }
     .summary-cards { grid-template-columns:1fr 1fr; }
+    .table-wrap { max-height:calc(100vh - 200px); }
   }
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header" id="mainHeader">
-  <div class="header-icon">📊</div>
-  <div class="header-title">
+<!-- HEADER -->
+<div id="mainHeader">
+  <div class="hicon">📊</div>
+  <div class="htitle">
     <h1>학교예산 사업관리카드</h1>
     <p>예산현액 검색 및 조회 시스템</p>
   </div>
-  <div class="header-right" id="headerRight">
-    <label class="upload-btn" for="fileInput">📂 엑셀 파일 업로드</label>
-    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  <div class="hright" id="hright">
+    <label class="btn btn-primary" for="fileInput">📂 엑셀 파일 업로드</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
   </div>
 </div>
 
-<!-- Drop Zone -->
+<!-- DROP ZONE -->
 <div id="dropSection">
   <div class="drop-zone" id="dropZone">
-    <div class="dz-icon">📂</div>
+    <div class="dzi">📂</div>
     <h3>엑셀 파일을 드래그하거나 클릭해서 업로드</h3>
     <p>사업관리카드 파일을 올리면 바로 검색할 수 있습니다</p>
-    <p class="hint">지원 형식: .xlsx, .xls &nbsp;|&nbsp; 엑셀 파일을 업로드하면 데이터가 표시됩니다</p>
+    <p class="hint">지원 형식: .xlsx, .xls &nbsp;|&nbsp; 한번 등록하면 새로고침 후에도 유지됩니다</p>
   </div>
 </div>
 
-<!-- Main Content -->
+<!-- MAIN -->
 <div id="mainContent" style="display:none">
   <div class="summary-cards" id="summaryCards"></div>
 
   <div class="search-area">
     <div class="search-box">
-      <span class="search-icon">🔍</span>
+      <span class="sicon">🔍</span>
       <input class="search-input" id="searchInput" type="text"
              placeholder="산출내역, 세부사업, 원가통계비목, 담당자 등으로 검색..." autocomplete="off">
     </div>
@@ -281,8 +249,10 @@
   <div class="results-bar">
     <div class="rcount" id="rcount"></div>
     <div style="display:flex;align-items:center;gap:8px">
-      <span class="memo-count-badge" id="memoCountBadge" onclick="showAllMemos()" style="display:none">📝 메모 <span id="memoCountNum">0</span>건</span>
-      <select class="fselect" id="sortSelect">
+      <span class="memo-badge" id="memoBadge" style="display:none" onclick="showMemoList()">
+        📝 메모 <span id="memoNum">0</span>건
+      </span>
+      <select class="fselect" id="sortSel">
         <option value="">정렬: 기본</option>
         <option value="예산현액(A)-desc">예산현액 많은순</option>
         <option value="예산현액(A)-asc">예산현액 적은순</option>
@@ -293,203 +263,240 @@
     </div>
   </div>
 
-  <div class="table-container">
-    <div class="table-scroll">
-    <table id="tbl">
-      <thead><tr>
-        <th data-col="세부사업">세부사업</th>
-        <th data-col="세부항목">세부항목</th>
-        <th data-col="원가통계비목">원가통계비목</th>
-        <th data-col="산출내역">산출내역</th>
-        <th data-col="예산현액(A)">예산현액(A)</th>
-        <th data-col="원인행위액(B)">원인행위액(B)</th>
-        <th data-col="집행률(B/A)">집행률</th>
-        <th data-col="예산잔액">예산잔액</th>
-        <th data-col="지급액(C)">지급액(C)</th>
-        <th data-col="세부항목담당자">담당자</th>
-        <th style="cursor:default" data-col="">메모</th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    </div><!-- /.table-scroll -->
-    <div id="emptyEl" style="display:none" class="empty">
-      <div class="ei">🔎</div>
-      <h3>검색 결과가 없습니다</h3>
-      <p>다른 검색어나 필터를 시도해보세요</p>
+  <div class="table-outer">
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead><tr>
+          <th data-col="세부사업">세부사업</th>
+          <th data-col="세부항목">세부항목</th>
+          <th data-col="원가통계비목">원가통계비목</th>
+          <th data-col="산출내역">산출내역</th>
+          <th data-col="예산현액(A)">예산현액(A)</th>
+          <th data-col="원인행위액(B)">원인행위액(B)</th>
+          <th data-col="집행률(B/A)">집행률</th>
+          <th data-col="예산잔액">예산잔액</th>
+          <th data-col="지급액(C)">지급액(C)</th>
+          <th data-col="세부항목담당자">담당자</th>
+          <th class="no-sort" style="cursor:default">메모</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="emptyEl" style="display:none" class="empty">
+        <div class="ei">🔎</div>
+        <h3>검색 결과가 없습니다</h3>
+        <p>다른 검색어나 필터를 시도해보세요</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Memo Modal -->
-<div class="memo-overlay" id="memoOverlay" onclick="closeMemoModal(event)">
-  <div class="memo-modal" onclick="event.stopPropagation()">
-    <div class="memo-modal-header">
-      <div class="memo-modal-icon">📝</div>
-      <div class="memo-modal-info">
-        <div class="mm-cat" id="mm-cat"></div>
-        <div class="mm-name" id="mm-name"></div>
-        <div class="mm-sub" id="mm-sub"></div>
+<!-- MEMO MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <div class="micon">📝</div>
+      <div class="minfo">
+        <div class="mc" id="mm-cat"></div>
+        <div class="mn" id="mm-name"></div>
+        <div class="ms" id="mm-sub"></div>
       </div>
-      <button class="memo-modal-close" onclick="closeMemoModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="memo-budget-bar" id="mm-budget"></div>
-    <div class="memo-label">📌 메모</div>
-    <textarea class="memo-textarea" id="memoTextarea" placeholder="이 항목에 대한 메모를 입력하세요...&#10;예) 집행 계획, 주의사항, 협의 내용 등"></textarea>
-    <div class="memo-footer">
-      <span class="mf-left" id="mm-saved-at"></span>
-      <div class="mf-right">
-        <button class="memo-del-btn" id="memoDelBtn" onclick="deleteMemo()" style="display:none">삭제</button>
-        <button class="memo-save-btn" onclick="saveMemo()">저장</button>
+    <div class="budget-bar" id="mm-budget"></div>
+    <div class="mlabel">📌 메모</div>
+    <textarea class="mtextarea" id="memoTA"
+      placeholder="이 항목에 대한 메모를 입력하세요...&#10;예) 집행 계획, 주의사항, 협의 내용 등"></textarea>
+    <div class="modal-ftr">
+      <span class="mfts" id="mm-saved"></span>
+      <div class="mftr">
+        <button class="btn-del" id="btnDel" onclick="delMemo()" style="display:none">삭제</button>
+        <button class="btn-save" onclick="saveMemo()">저장</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/* ── State ── */
-let DATA = [], filtered = [], query = '', selCat = '', selPerson = '', sortCol = null, sortDir = 'asc';
-let MEMOS = {}; // key: rowKey, value: { text, savedAt }
-let currentMemoKey = null;
+/* ════════════════════════════════
+   STATE
+════════════════════════════════ */
+let DATA = [], filtered = [];
+let query='', selCat='', selPerson='', sortCol=null, sortDir='asc';
+let MEMOS = {};
+let curKey = null;
 
-/* ── Header height sync ── */
-function syncHeaderHeight() {
-  const header = document.getElementById('mainHeader');
-  if (header) {
-    document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+/* ════════════════════════════════
+   STORAGE KEYS
+════════════════════════════════ */
+const SK_DATA  = 'budgetDATA_v1';
+const SK_NAME  = 'budgetFILE_v1';
+const SK_MEMOS = 'budgetMEMOS_v1';
+
+/* ════════════════════════════════
+   INIT
+════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  // 메모 로드
+  try { MEMOS = JSON.parse(localStorage.getItem(SK_MEMOS)||'{}'); } catch(e){ MEMOS={}; }
+
+  // 저장된 데이터 복원
+  const saved = localStorage.getItem(SK_DATA);
+  const savedName = localStorage.getItem(SK_NAME) || '저장된 파일';
+  if (saved) {
+    try {
+      DATA = JSON.parse(saved);
+      if (DATA.length) { loadUI(savedName); return; }
+    } catch(e) { DATA=[]; }
   }
-}
 
-/* ── Memo key builder ── */
-function memoKey(r) {
-  return [r['세부사업']||'', r['세부항목']||'', r['산출내역']||''].join('||');
-}
+  // 파일 입력 바인딩
+  bindFile('fileInput');
+  setupDrop();
+});
 
-/* ── File upload ── */
-function bindFileInput(id) {
+window.addEventListener('resize', () => {});
+
+/* ════════════════════════════════
+   FILE HANDLING
+════════════════════════════════ */
+function bindFile(id) {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+  if (el) el.addEventListener('change', e => { if(e.target.files[0]) readFile(e.target.files[0]); });
 }
 
-const dz = document.getElementById('dropZone');
-dz.addEventListener('click', () => document.getElementById('fileInput').click());
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
-bindFileInput('fileInput');
+function setupDrop() {
+  const dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.addEventListener('click', () => document.getElementById('fileInput').click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+  });
+}
 
-function processFile(file) {
+function readFile(file) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const wb = XLSX.read(ev.target.result, {type:'array'});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
       parseAndLoad(raw, file.name);
-    } catch(err) { alert('파일 오류: ' + err.message); }
+    } catch(e) { alert('파일 오류: '+e.message); }
   };
   reader.readAsArrayBuffer(file);
 }
 
 function parseAndLoad(rows, fileName) {
   let hdr = -1;
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    if (String(rows[i][0]).trim() === '세부사업') { hdr = i; break; }
+  for (let i=0;i<Math.min(rows.length,10);i++) {
+    if (String(rows[i][0]).trim()==='세부사업') { hdr=i; break; }
   }
-  if (hdr < 0) hdr = 2;
-  const headers = rows[hdr].map(h => String(h).trim());
-  const numCols = ['예산액','증감액','예산현액(A)','지출품의액','원인행위액(B)','집행률(B/A)','예산잔액','지출결의액','지급액(C)','집행률(C/A)','지출잔액(A-C)','정산재원','일반재원'];
+  if (hdr<0) hdr=2;
+  const headers = rows[hdr].map(h=>String(h).trim());
+  const numCols = ['예산액','증감액','예산현액(A)','지출품의액','원인행위액(B)','집행률(B/A)',
+                   '예산잔액','지출결의액','지급액(C)','집행률(C/A)','지출잔액(A-C)','정산재원','일반재원'];
   const records = [];
-  for (let i = hdr + 1; i < rows.length; i++) {
+  for (let i=hdr+1;i<rows.length;i++) {
     const rec = {};
-    headers.forEach((h, j) => { rec[h] = rows[i][j] ?? ''; });
-    const cat = String(rec['세부사업'] || '');
+    headers.forEach((h,j)=>{ rec[h]=rows[i][j]??''; });
+    const cat = String(rec['세부사업']||'');
     if (!cat) continue;
-    // 합계/총계는 제외, 소계는 포함(플래그)
-    if (/합\s*계|총\s*계/.test(cat)) continue;
-    const isSubtotal = /소\s*계/.test(cat) || /소\s*계/.test(String(rec['세부항목']||''));
-    numCols.forEach(k => { const v = parseFloat(rec[k]); rec[k] = isNaN(v) ? 0 : v; });
-    rec['_subtotal'] = isSubtotal;
+    if (/합\s*계|총\s*계/.test(cat)) continue; // 합계/총계 제외
+    // 소계는 포함 + 플래그
+    const isSub = /소\s*계/.test(cat) || /소\s*계/.test(String(rec['세부항목']||''));
+    numCols.forEach(k=>{ const v=parseFloat(rec[k]); rec[k]=isNaN(v)?0:v; });
+    rec._sub = isSub;
     records.push(rec);
   }
   DATA = records;
+  // localStorage 저장 (5MB 한도 고려)
+  try {
+    localStorage.setItem(SK_DATA, JSON.stringify(DATA));
+    localStorage.setItem(SK_NAME, fileName);
+  } catch(e) {
+    // 용량 초과시 저장 생략
+  }
   loadUI(fileName);
 }
 
-/* ── Init ── */
-window.addEventListener('DOMContentLoaded', () => {
-  // Load memos from localStorage
-  try { MEMOS = JSON.parse(localStorage.getItem('schoolBudgetMemos') || '{}'); } catch(e) { MEMOS = {}; }
-  bindFileInput('fileInput');
-  syncHeaderHeight();
-});
-window.addEventListener('resize', syncHeaderHeight);
-
+/* ════════════════════════════════
+   LOAD UI
+════════════════════════════════ */
 function loadUI(fileName) {
   document.getElementById('dropSection').style.display = 'none';
-  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('mainContent').style.display  = 'block';
 
-  query = ''; selCat = ''; selPerson = ''; sortCol = null; sortDir = 'asc';
-  const si = document.getElementById('searchInput'); if (si) si.value = '';
+  // 상태 초기화
+  query=''; selCat=''; selPerson=''; sortCol=null; sortDir='asc';
+  const si=document.getElementById('searchInput'); if(si) si.value='';
 
-  const hr = document.getElementById('headerRight');
-  const totalB = DATA.reduce((s,r) => s+(r['예산현액(A)']||0), 0);
-  hr.innerHTML = `
+  // 헤더 우측
+  const totalB = DATA.reduce((s,r)=>s+(r['예산현액(A)']||0),0);
+  document.getElementById('hright').innerHTML = `
     <div class="stat-pill"><strong>총예산</strong>${fmtShort(totalB)}</div>
     <div class="stat-pill"><strong>${DATA.length}건</strong> 로드됨</div>
-    <span class="file-tag">✅ ${escHtml(fileName)}</span>
-    <label class="upload-btn secondary" for="fileInputH" style="font-size:12px;padding:6px 12px">📂 파일 교체</label>
-    <input type="file" id="fileInputH" accept=".xlsx,.xls" style="display:none">
+    <span class="file-tag" title="${esc(fileName)}">✅ ${esc(fileName)}</span>
+    <label class="btn btn-gray" for="fileReplace" style="font-size:11px;padding:6px 11px">📂 파일 교체</label>
+    <input type="file" id="fileReplace" accept=".xlsx,.xls" style="display:none">
   `;
-  document.getElementById('fileInputH').addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+  document.getElementById('fileReplace').addEventListener('change', e=>{
+    if(e.target.files[0]) readFile(e.target.files[0]);
+  });
 
-  setTimeout(syncHeaderHeight, 50);
-
-  const totalExec = DATA.reduce((s,r) => s+(r['원인행위액(B)']||0), 0);
-  const totalBal  = DATA.reduce((s,r) => s+(r['예산잔액']||0), 0);
-  const cats = [...new Set(DATA.map(r=>r['세부사업']).filter(Boolean))];
-  const avgE = totalB > 0 ? (totalExec/totalB*100).toFixed(1) : '0.0';
+  // 요약 카드
+  const totalExec = DATA.reduce((s,r)=>s+(r['원인행위액(B)']||0),0);
+  const totalBal  = DATA.reduce((s,r)=>s+(r['예산잔액']||0),0);
+  const cats = [...new Set(DATA.filter(r=>!r._sub).map(r=>r['세부사업']).filter(Boolean))];
+  const avgE = totalB>0?(totalExec/totalB*100).toFixed(1):'0.0';
   document.getElementById('summaryCards').innerHTML = `
     <div class="card"><div class="lbl">총 예산현액</div><div class="val">${fmtShort(totalB)}</div><div class="sub">${fmtWon(totalB)}</div></div>
     <div class="card"><div class="lbl">원인행위액</div><div class="val">${fmtShort(totalExec)}</div><div class="sub">집행률 ${avgE}%</div></div>
     <div class="card"><div class="lbl">예산잔액</div><div class="val">${fmtShort(totalBal)}</div><div class="sub">${fmtWon(totalBal)}</div></div>
-    <div class="card"><div class="lbl">사업/항목수</div><div class="val">${cats.length}개</div><div class="sub">총 ${DATA.length}개 항목</div></div>
+    <div class="card"><div class="lbl">사업/항목수</div><div class="val">${cats.length}개</div><div class="sub">총 ${DATA.filter(r=>!r._sub).length}개 항목</div></div>
   `;
 
+  // 세부사업 칩
   const cc = document.getElementById('catChips');
   cc.innerHTML = `<span class="chip active" data-cat="">전체</span>` +
-    cats.map(c => `<span class="chip" data-cat="${escHtml(c)}">${escHtml(c)}</span>`).join('');
+    cats.map(c=>`<span class="chip" data-cat="${esc(c)}">${esc(c)}</span>`).join('');
   cc.onclick = e => {
-    const t = e.target.closest('.chip'); if(!t) return;
-    selCat = t.dataset.cat;
-    cc.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === selCat));
+    const t=e.target.closest('.chip'); if(!t) return;
+    selCat=t.dataset.cat;
+    cc.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('active',ch.dataset.cat===selCat));
     render();
   };
 
+  // 담당자 필터
   const pf = document.getElementById('personFilter');
-  const persons = [...new Set(DATA.flatMap(r => (r['세부항목담당자']||'').split(',').map(p=>p.trim())))].filter(Boolean).sort();
-  pf.innerHTML = '<option value="">전체</option>' + persons.map(p=>`<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
-  pf.onchange = () => { selPerson = pf.value; render(); };
+  const persons = [...new Set(DATA.flatMap(r=>(r['세부항목담당자']||'').split(',').map(p=>p.trim())))].filter(Boolean).sort();
+  pf.innerHTML = '<option value="">전체</option>'+persons.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  pf.onchange = () => { selPerson=pf.value; render(); };
 
-  const ss = document.getElementById('sortSelect');
-  ss.value = '';
+  // 정렬 셀렉트
+  const ss = document.getElementById('sortSel');
+  ss.value='';
   ss.onchange = e => {
-    const v = e.target.value;
-    if (!v) { sortCol = null; } else { const p = v.split('-'); sortCol = p[0]; sortDir = p[1]; }
+    const v=e.target.value;
+    if(!v){ sortCol=null; } else { const p=v.split('-'); sortCol=p[0]; sortDir=p[1]; }
     render();
   };
 
-  const si2 = document.getElementById('searchInput');
-  si2.oninput = e => { query = e.target.value.trim(); render(); };
+  // 검색
+  document.getElementById('searchInput').oninput = e => { query=e.target.value.trim(); render(); };
 
-  document.querySelectorAll('thead th[data-col]').forEach(th => {
-    if (!th.dataset.col) return;
-    th.onclick = () => {
-      const col = th.dataset.col;
-      if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      else { sortCol = col; sortDir = 'asc'; }
-      ss.value = '';
-      document.querySelectorAll('thead th').forEach(t => t.classList.remove('sorted','sorted-asc','sorted-desc'));
-      th.classList.add('sorted', sortDir==='asc'?'sorted-asc':'sorted-desc');
+  // 컬럼 정렬
+  document.querySelectorAll('thead th[data-col]').forEach(th=>{
+    if(!th.dataset.col) return;
+    th.onclick=()=>{
+      const col=th.dataset.col;
+      if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
+      else { sortCol=col; sortDir='asc'; }
+      ss.value='';
+      document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sorted','sorted-asc','sorted-desc'));
+      th.classList.add('sorted',sortDir==='asc'?'sorted-asc':'sorted-desc');
       render();
     };
   });
@@ -497,23 +504,26 @@ function loadUI(fileName) {
   render();
 }
 
-/* ── Render ── */
+/* ════════════════════════════════
+   RENDER
+════════════════════════════════ */
 function render() {
   const q = query.toLowerCase();
-  filtered = DATA.filter(r => {
-    if (selCat && r['세부사업'] !== selCat) return false;
+  filtered = DATA.filter(r=>{
+    if (selCat && r['세부사업']!==selCat) return false;
     if (selPerson && !(r['세부항목담당자']||'').split(',').map(p=>p.trim()).includes(selPerson)) return false;
     if (!q) return true;
-    return ['세부사업','세부항목','원가통계비목','산출내역','세부항목담당자'].some(k => String(r[k]||'').toLowerCase().includes(q));
+    return ['세부사업','세부항목','원가통계비목','산출내역','세부항목담당자']
+      .some(k=>String(r[k]||'').toLowerCase().includes(q));
   });
 
   if (sortCol) {
-    filtered.sort((a,b) => {
-      let av = a[sortCol], bv = b[sortCol];
-      if (typeof av === 'number') return sortDir==='asc' ? av-bv : bv-av;
+    filtered.sort((a,b)=>{
+      const av=a[sortCol], bv=b[sortCol];
+      if(typeof av==='number') return sortDir==='asc'?av-bv:bv-av;
       return sortDir==='asc'
-        ? String(av||'').localeCompare(String(bv||''),'ko')
-        : String(bv||'').localeCompare(String(av||''),'ko');
+        ?String(av||'').localeCompare(String(bv||''),'ko')
+        :String(bv||'').localeCompare(String(av||''),'ko');
     });
   }
 
@@ -521,142 +531,136 @@ function render() {
   document.getElementById('rcount').innerHTML =
     `검색결과 <span>${filtered.length.toLocaleString()}</span>건 &nbsp;·&nbsp; 예산현액 합계 <span>${fmtWon(fb)}</span>`;
 
-  // Update memo count badge
-  const memoCount = Object.keys(MEMOS).length;
-  const badge = document.getElementById('memoCountBadge');
-  document.getElementById('memoCountNum').textContent = memoCount;
-  badge.style.display = memoCount > 0 ? 'inline-flex' : 'none';
+  // 메모 배지
+  const mc = Object.keys(MEMOS).length;
+  document.getElementById('memoNum').textContent = mc;
+  document.getElementById('memoBadge').style.display = mc>0?'inline-flex':'none';
 
-  const tbody = document.getElementById('tbody');
-  const emptyEl = document.getElementById('emptyEl');
-  const tbl = document.getElementById('tbl');
+  const tbody  = document.getElementById('tbody');
+  const emptyEl= document.getElementById('emptyEl');
+  const tbl    = document.getElementById('tbl');
 
-  if (filtered.length === 0) {
-    emptyEl.style.display = 'block';
-    tbl.style.display = 'none';
-    tbody.innerHTML = '';
-    return;
+  if (filtered.length===0) {
+    emptyEl.style.display='block'; tbl.style.display='none'; tbody.innerHTML=''; return;
   }
-  emptyEl.style.display = 'none';
-  tbl.style.display = '';
+  emptyEl.style.display='none'; tbl.style.display='';
 
-  tbody.innerHTML = filtered.map((r, i) => {
-    const er = r['집행률(B/A)'] || 0;
-    const fc = er >= 70 ? 'hi' : er >= 30 ? 'md' : '';
-    const pp = (r['세부항목담당자']||'').split(',').map(p=>p.trim()).filter(Boolean);
-    const key = memoKey(r);
-    const hasMemo = !!MEMOS[key];
-    const memoPreview = hasMemo ? escHtml(MEMOS[key].text.substring(0, 20)) + (MEMOS[key].text.length > 20 ? '…' : '') : '';
-    const isSubtotal = r['_subtotal'];
-    return `<tr class="${isSubtotal?'subtotal-row':''}">
+  tbody.innerHTML = filtered.map((r,i)=>{
+    const er   = r['집행률(B/A)']||0;
+    const fc   = er>=70?'hi':er>=30?'md':'';
+    const pp   = (r['세부항목담당자']||'').split(',').map(p=>p.trim()).filter(Boolean);
+    const key  = mkey(r);
+    const memo = MEMOS[key];
+
+    return `<tr class="${r._sub?'subtotal':''}">
       <td><span class="badge bc">${hl(r['세부사업'],q)}</span></td>
       <td><span class="badge bi">${hl(r['세부항목'],q)}</span></td>
-      <td style="font-size:12px;color:#111827">${hl(r['원가통계비목'],q)}</td>
-      <td style="color:#111827">${hl(r['산출내역'],q)}</td>
-      <td class="num">${fn(r['예산현액(A)'])}</td>
-      <td class="num">${fn(r['원인행위액(B)'])}</td>
-      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill ${fc}" style="width:${Math.min(er,100)}%"></div></div><span class="prog-pct" style="color:#111827">${er>0?er.toFixed(1)+'%':'-'}</span></div></td>
-      <td class="num">${fn(r['예산잔액'])}</td>
-      <td class="num">${fn(r['지급액(C)'])}</td>
-      <td>${pp.map(p=>`<span class="ptag" style="color:#111827">${hl(p,q)}</span>`).join('')}</td>
+      <td style="font-size:12px">${hl(r['원가통계비목'],q)}</td>
+      <td>${hl(r['산출내역'],q)}</td>
+      <td class="num${!r['예산현액(A)']?' zero':''}">${fn(r['예산현액(A)'])}</td>
+      <td class="num${!r['원인행위액(B)']?' zero':''}">${fn(r['원인행위액(B)'])}</td>
+      <td><div class="prog-wrap">
+        <div class="prog-bar"><div class="prog-fill ${fc}" style="width:${Math.min(er,100)}%"></div></div>
+        <span class="prog-pct">${er>0?er.toFixed(1)+'%':'-'}</span>
+      </div></td>
+      <td class="num${!r['예산잔액']?' zero':''}">${fn(r['예산잔액'])}</td>
+      <td class="num${!r['지급액(C)']?' zero':''}">${fn(r['지급액(C)'])}</td>
+      <td>${pp.map(p=>`<span class="ptag">${hl(p,q)}</span>`).join('')}</td>
       <td>
-        <div class="memo-cell">
-          <button class="memo-btn ${hasMemo?'has-memo':''}" onclick="openMemo(${i})" title="${hasMemo?'메모 보기/수정':'메모 추가'}">
-            ${hasMemo ? '📝' : '✏️'}
-          </button>
-          ${hasMemo ? `<span style="font-size:11px;color:#92400e;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${memoPreview}</span>` : ''}
+        <div class="memo-wrap">
+          <button class="memo-btn${memo?' has':''}" onclick="openMemo(${i})"
+            title="${memo?'메모 보기/수정':'메모 추가'}">${memo?'📝':'✏️'}</button>
+          ${memo?`<span class="memo-preview" onclick="openMemo(${i})">${esc(memo.text)}</span>`:''}
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-/* ── Memo functions ── */
-function openMemo(idx) {
-  const r = filtered[idx];
-  const key = memoKey(r);
-  currentMemoKey = key;
-
-  document.getElementById('mm-cat').textContent = r['세부사업'] || '';
-  document.getElementById('mm-name').textContent = r['세부항목'] || '';
-  document.getElementById('mm-sub').textContent = r['산출내역'] || '';
-  document.getElementById('mm-budget').innerHTML = `
-    <div class="mbi"><div class="mbl">예산현액</div><div class="mbv" style="color:var(--accent)">${fn(r['예산현액(A)'])}원</div></div>
-    <div class="mbi"><div class="mbl">원인행위액</div><div class="mbv" style="color:var(--green)">${fn(r['원인행위액(B)'])}원</div></div>
-    <div class="mbi"><div class="mbl">집행률</div><div class="mbv">${r['집행률(B/A)']>0?r['집행률(B/A)'].toFixed(1)+'%':'-'}</div></div>
-    <div class="mbi"><div class="mbl">예산잔액</div><div class="mbv">${fn(r['예산잔액'])}원</div></div>
-  `;
-
-  const existing = MEMOS[key];
-  const ta = document.getElementById('memoTextarea');
-  ta.value = existing ? existing.text : '';
-  document.getElementById('mm-saved-at').textContent = existing ? `마지막 저장: ${existing.savedAt}` : '';
-  document.getElementById('memoDelBtn').style.display = existing ? 'inline-flex' : 'none';
-
-  document.getElementById('memoOverlay').classList.add('open');
-  setTimeout(() => ta.focus(), 100);
+/* ════════════════════════════════
+   MEMO
+════════════════════════════════ */
+function mkey(r) {
+  return [r['세부사업']||'',r['세부항목']||'',r['산출내역']||''].join('||');
 }
 
-function closeMemoModal(e) {
-  if (e && e.target !== document.getElementById('memoOverlay')) return;
-  document.getElementById('memoOverlay').classList.remove('open');
-  currentMemoKey = null;
+function openMemo(idx) {
+  const r   = filtered[idx];
+  const key = mkey(r);
+  curKey    = key;
+  document.getElementById('mm-cat').textContent  = r['세부사업']||'';
+  document.getElementById('mm-name').textContent = r['세부항목']||'';
+  document.getElementById('mm-sub').textContent  = r['산출내역']||'';
+  document.getElementById('mm-budget').innerHTML = `
+    <div class="bitem"><div class="bl">예산현액</div><div class="bv" style="color:var(--accent)">${fn(r['예산현액(A)'])}원</div></div>
+    <div class="bitem"><div class="bl">원인행위액</div><div class="bv" style="color:#16a34a">${fn(r['원인행위액(B)'])}원</div></div>
+    <div class="bitem"><div class="bl">집행률</div><div class="bv">${r['집행률(B/A)']>0?r['집행률(B/A)'].toFixed(1)+'%':'-'}</div></div>
+    <div class="bitem"><div class="bl">예산잔액</div><div class="bv">${fn(r['예산잔액'])}원</div></div>
+  `;
+  const ex = MEMOS[key];
+  document.getElementById('memoTA').value          = ex?ex.text:'';
+  document.getElementById('mm-saved').textContent  = ex?`마지막 저장: ${ex.savedAt}`:'';
+  document.getElementById('btnDel').style.display  = ex?'inline-flex':'none';
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('memoTA').focus(),80);
+}
+
+function closeModal(e) {
+  if (e && e.target!==document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+  curKey=null;
 }
 
 function saveMemo() {
-  if (!currentMemoKey) return;
-  const text = document.getElementById('memoTextarea').value.trim();
-  if (!text) { deleteMemo(); return; }
-  const now = new Date().toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
-  MEMOS[currentMemoKey] = { text, savedAt: now };
-  saveMemoStorage();
-  document.getElementById('memoOverlay').classList.remove('open');
+  if (!curKey) return;
+  const text = document.getElementById('memoTA').value.trim();
+  if (!text) { delMemo(); return; }
+  const now = new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  MEMOS[curKey] = {text, savedAt:now};
+  saveMemos();
+  document.getElementById('overlay').classList.remove('open');
   render();
 }
 
-function deleteMemo() {
-  if (!currentMemoKey) return;
-  delete MEMOS[currentMemoKey];
-  saveMemoStorage();
-  document.getElementById('memoOverlay').classList.remove('open');
+function delMemo() {
+  if (!curKey) return;
+  delete MEMOS[curKey];
+  saveMemos();
+  document.getElementById('overlay').classList.remove('open');
   render();
 }
 
-function saveMemoStorage() {
-  try { localStorage.setItem('schoolBudgetMemos', JSON.stringify(MEMOS)); } catch(e) {}
+function saveMemos() {
+  try { localStorage.setItem(SK_MEMOS, JSON.stringify(MEMOS)); } catch(e){}
 }
 
-function showAllMemos() {
+function showMemoList() {
   const keys = Object.keys(MEMOS);
-  if (keys.length === 0) return;
-  let msg = `📝 저장된 메모 ${keys.length}건\n${'─'.repeat(40)}\n`;
-  keys.forEach(k => {
-    const parts = k.split('||');
-    msg += `\n[${parts[0]}] ${parts[1]}\n${parts[2]}\n→ ${MEMOS[k].text}\n`;
+  if (!keys.length) return;
+  let msg=`📝 저장된 메모 ${keys.length}건\n${'─'.repeat(38)}\n`;
+  keys.forEach(k=>{
+    const p=k.split('||');
+    msg+=`\n▸ [${p[0]}] ${p[1]}\n  ${p[2]}\n  → ${MEMOS[k].text}\n`;
   });
   alert(msg);
 }
 
-/* ── Keyboard shortcut ── */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('memoOverlay').classList.remove('open');
-});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('overlay').classList.remove('open'); });
 
-/* ── Helpers ── */
-function hl(text, q) {
-  if (!q) return escHtml(text);
-  return escHtml(text).replace(
-    new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
-    '<span class="hl">$1</span>'
-  );
+/* ════════════════════════════════
+   HELPERS
+════════════════════════════════ */
+function hl(text,q){
+  if(!q) return esc(text);
+  return esc(text).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="hl">$1</span>');
 }
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function fn(n) { const v = Number(n||0); return isNaN(v) ? '-' : v.toLocaleString('ko-KR'); }
-function fmtWon(n) { return '₩'+Number(n||0).toLocaleString('ko-KR'); }
-function fmtShort(n) {
-  n = Number(n||0);
-  if (n >= 1e8) return (n/1e8).toFixed(1)+'억';
-  if (n >= 1e4) return Math.round(n/1e4)+'만';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fn(n){ const v=Number(n||0); return isNaN(v)?'-':v.toLocaleString('ko-KR'); }
+function fmtWon(n){ return '₩'+Number(n||0).toLocaleString('ko-KR'); }
+function fmtShort(n){
+  n=Number(n||0);
+  if(n>=1e8) return (n/1e8).toFixed(1)+'억';
+  if(n>=1e4) return Math.round(n/1e4)+'만';
   return fmtWon(n);
 }
 </script>
