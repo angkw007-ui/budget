@@ -20,8 +20,6 @@
     --text: #111827;
     --text-muted: #6b7280;
     --text-dim: #9ca3af;
-
-    /* ✅ 추가: 헤더 실제 높이(기본값). JS가 로드 후 실제값으로 업데이트합니다. */
     --header-h: 62px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,7 +31,7 @@
     border-bottom: 1.5px solid var(--border);
     padding: 14px 32px;
     display: flex; align-items: center; gap: 14px;
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: 0; z-index: 200;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
   .header-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
@@ -116,11 +114,8 @@
     background:var(--surface); padding:10px 13px; text-align:left; font-weight:600;
     color:var(--text-muted); font-size:12px; border-bottom:1.5px solid var(--border);
     white-space:nowrap; cursor:pointer; user-select:none;
-
     position:sticky;
-    /* ✅ 수정: 상단바 높이만큼 내려서 고정 */
     top: var(--header-h);
-
     z-index:10;
   }
   thead th:hover { color:var(--accent); }
@@ -156,6 +151,73 @@
   .empty h3 { font-size:15px; font-weight:500; color:var(--text-muted); }
   .empty p { font-size:13px; color:var(--text-dim); margin-top:5px; }
 
+  /* ── Memo button in table ── */
+  .memo-btn {
+    background: none; border: 1.5px solid var(--border); border-radius: 6px;
+    width: 28px; height: 28px; cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all .15s; color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .memo-btn:hover { border-color: var(--yellow); background: #fffbeb; color: #92400e; }
+  .memo-btn.has-memo { border-color: #fcd34d; background: #fef9c3; color: #92400e; }
+  .memo-cell { display: flex; align-items: center; gap: 6px; }
+
+  /* ── Memo Modal ── */
+  .memo-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+    align-items: center; justify-content: center;
+  }
+  .memo-overlay.open { display: flex; }
+  .memo-modal {
+    background: #fff; border-radius: 16px; padding: 24px;
+    width: min(480px, 92vw); box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    animation: memoIn .2s ease;
+  }
+  @keyframes memoIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
+  .memo-modal-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .memo-modal-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .memo-modal-info { flex: 1; }
+  .memo-modal-info .mm-cat { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+  .memo-modal-info .mm-name { font-size: 14px; font-weight: 700; }
+  .memo-modal-info .mm-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .memo-modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 2px 6px; border-radius: 5px; transition: background .1s; }
+  .memo-modal-close:hover { background: var(--surface2); }
+  .memo-budget-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .memo-budget-bar .mbi { text-align: center; }
+  .memo-budget-bar .mbi .mbl { font-size: 10px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+  .memo-budget-bar .mbi .mbv { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; margin-top: 1px; }
+  .memo-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  .memo-textarea {
+    width: 100%; min-height: 120px; resize: vertical;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 10px 13px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
+    color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s;
+    line-height: 1.7;
+  }
+  .memo-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .memo-textarea::placeholder { color: var(--text-dim); }
+  .memo-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 8px; }
+  .memo-footer .mf-left { font-size: 11px; color: var(--text-dim); }
+  .memo-footer .mf-right { display: flex; gap: 7px; }
+  .memo-save-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .memo-save-btn:hover { background: #1d4ed8; }
+  .memo-del-btn { background: #fff; color: #ef4444; border: 1.5px solid #fca5a5; border-radius: 8px; padding: 8px 14px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .memo-del-btn:hover { background: #fef2f2; border-color: #ef4444; }
+
+  /* ── Memo panel (side) hidden ── */
+  .memo-count-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #fef9c3; border: 1px solid #fcd34d; border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; font-weight: 600; color: #92400e;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .memo-count-badge:hover { background: #fef3c7; }
+
   @media(max-width:768px) {
     .header { padding:12px 16px; }
     .header-right .stat-pill { display:none; }
@@ -168,7 +230,7 @@
 <body>
 
 <!-- Header -->
-<div class="header">
+<div class="header" id="mainHeader">
   <div class="header-icon">📊</div>
   <div class="header-title">
     <h1>학교예산 사업관리카드</h1>
@@ -180,13 +242,13 @@
   </div>
 </div>
 
-<!-- Drop Zone (shown only when no data) -->
+<!-- Drop Zone -->
 <div id="dropSection">
   <div class="drop-zone" id="dropZone">
     <div class="dz-icon">📂</div>
     <h3>엑셀 파일을 드래그하거나 클릭해서 업로드</h3>
     <p>사업관리카드 파일을 올리면 바로 검색할 수 있습니다</p>
-    <p class="hint">지원 형식: .xlsx, .xls &nbsp;|&nbsp; 2026 기본 데이터가 미리 로드되어 있습니다</p>
+    <p class="hint">지원 형식: .xlsx, .xls &nbsp;|&nbsp; 엑셀 파일을 업로드하면 데이터가 표시됩니다</p>
   </div>
 </div>
 
@@ -210,14 +272,17 @@
 
   <div class="results-bar">
     <div class="rcount" id="rcount"></div>
-    <select class="fselect" id="sortSelect">
-      <option value="">정렬: 기본</option>
-      <option value="예산현액(A)-desc">예산현액 많은순</option>
-      <option value="예산현액(A)-asc">예산현액 적은순</option>
-      <option value="집행률(B/A)-desc">집행률 높은순</option>
-      <option value="집행률(B/A)-asc">집행률 낮은순</option>
-      <option value="예산잔액-desc">잔액 많은순</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="memo-count-badge" id="memoCountBadge" onclick="showAllMemos()" style="display:none">📝 메모 <span id="memoCountNum">0</span>건</span>
+      <select class="fselect" id="sortSelect">
+        <option value="">정렬: 기본</option>
+        <option value="예산현액(A)-desc">예산현액 많은순</option>
+        <option value="예산현액(A)-asc">예산현액 적은순</option>
+        <option value="집행률(B/A)-desc">집행률 높은순</option>
+        <option value="집행률(B/A)-asc">집행률 낮은순</option>
+        <option value="예산잔액-desc">잔액 많은순</option>
+      </select>
+    </div>
   </div>
 
   <div class="table-container">
@@ -233,6 +298,7 @@
         <th data-col="예산잔액">예산잔액</th>
         <th data-col="지급액(C)">지급액(C)</th>
         <th data-col="세부항목담당자">담당자</th>
+        <th style="cursor:default" data-col="">메모</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -244,22 +310,49 @@
   </div>
 </div>
 
+<!-- Memo Modal -->
+<div class="memo-overlay" id="memoOverlay" onclick="closeMemoModal(event)">
+  <div class="memo-modal" onclick="event.stopPropagation()">
+    <div class="memo-modal-header">
+      <div class="memo-modal-icon">📝</div>
+      <div class="memo-modal-info">
+        <div class="mm-cat" id="mm-cat"></div>
+        <div class="mm-name" id="mm-name"></div>
+        <div class="mm-sub" id="mm-sub"></div>
+      </div>
+      <button class="memo-modal-close" onclick="closeMemoModal()">✕</button>
+    </div>
+    <div class="memo-budget-bar" id="mm-budget"></div>
+    <div class="memo-label">📌 메모</div>
+    <textarea class="memo-textarea" id="memoTextarea" placeholder="이 항목에 대한 메모를 입력하세요...&#10;예) 집행 계획, 주의사항, 협의 내용 등"></textarea>
+    <div class="memo-footer">
+      <span class="mf-left" id="mm-saved-at"></span>
+      <div class="mf-right">
+        <button class="memo-del-btn" id="memoDelBtn" onclick="deleteMemo()" style="display:none">삭제</button>
+        <button class="memo-save-btn" onclick="saveMemo()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ── State ── */
 let DATA = [], filtered = [], query = '', selCat = '', selPerson = '', sortCol = null, sortDir = 'asc';
+let MEMOS = {}; // key: rowKey, value: { text, savedAt }
+let currentMemoKey = null;
 
-/* ✅ 추가: 실제 헤더 높이를 CSS 변수로 동기화(상단바가 가리는 문제 해결) */
+/* ── Header height sync ── */
 function syncHeaderHeight() {
-  const header = document.querySelector('.header');
-  const h = header ? header.offsetHeight : 0;
-  document.documentElement.style.setProperty('--header-h', h + 'px');
+  const header = document.getElementById('mainHeader');
+  if (header) {
+    document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+  }
 }
 
-/* ── Built-in 2026 data ── */
-/* ⚠️ 여기에는 질문에 올리신 BUILTIN 배열을 "그대로" 붙여 넣으세요. */
-const BUILTIN = [
-  /* ... 기존 BUILTIN 데이터 전체 그대로 ... */
-];
+/* ── Memo key builder ── */
+function memoKey(r) {
+  return [r['세부사업']||'', r['세부항목']||'', r['산출내역']||''].join('||');
+}
 
 /* ── File upload ── */
 function bindFileInput(id) {
@@ -308,13 +401,11 @@ function parseAndLoad(rows, fileName) {
   loadUI(fileName);
 }
 
-/* ── Init with built-in data ── */
+/* ── Init ── */
 window.addEventListener('DOMContentLoaded', () => {
-  DATA = BUILTIN;
-  loadUI('2026_사업관리카드(기본 데이터)');
+  // Load memos from localStorage
+  try { MEMOS = JSON.parse(localStorage.getItem('schoolBudgetMemos') || '{}'); } catch(e) { MEMOS = {}; }
   bindFileInput('fileInput');
-
-  /* ✅ 추가: 로드 직후 헤더 높이 동기화 */
   syncHeaderHeight();
 });
 window.addEventListener('resize', syncHeaderHeight);
@@ -323,11 +414,9 @@ function loadUI(fileName) {
   document.getElementById('dropSection').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
 
-  // Reset filters
   query = ''; selCat = ''; selPerson = ''; sortCol = null; sortDir = 'asc';
   const si = document.getElementById('searchInput'); if (si) si.value = '';
 
-  // Header right
   const hr = document.getElementById('headerRight');
   const totalB = DATA.reduce((s,r) => s+(r['예산현액(A)']||0), 0);
   hr.innerHTML = `
@@ -339,10 +428,8 @@ function loadUI(fileName) {
   `;
   document.getElementById('fileInputH').addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
 
-  /* ✅ 추가: headerRight 내용이 바뀌면 헤더 높이가 달라질 수 있으므로 즉시 재계산 */
-  syncHeaderHeight();
+  setTimeout(syncHeaderHeight, 50);
 
-  // Summary
   const totalExec = DATA.reduce((s,r) => s+(r['원인행위액(B)']||0), 0);
   const totalBal  = DATA.reduce((s,r) => s+(r['예산잔액']||0), 0);
   const cats = [...new Set(DATA.map(r=>r['세부사업']).filter(Boolean))];
@@ -354,7 +441,6 @@ function loadUI(fileName) {
     <div class="card"><div class="lbl">사업/항목수</div><div class="val">${cats.length}개</div><div class="sub">총 ${DATA.length}개 항목</div></div>
   `;
 
-  // Category chips
   const cc = document.getElementById('catChips');
   cc.innerHTML = `<span class="chip active" data-cat="">전체</span>` +
     cats.map(c => `<span class="chip" data-cat="${escHtml(c)}">${escHtml(c)}</span>`).join('');
@@ -365,13 +451,11 @@ function loadUI(fileName) {
     render();
   };
 
-  // Person filter
   const pf = document.getElementById('personFilter');
   const persons = [...new Set(DATA.flatMap(r => (r['세부항목담당자']||'').split(',').map(p=>p.trim())))].filter(Boolean).sort();
   pf.innerHTML = '<option value="">전체</option>' + persons.map(p=>`<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('');
   pf.onchange = () => { selPerson = pf.value; render(); };
 
-  // Sort
   const ss = document.getElementById('sortSelect');
   ss.value = '';
   ss.onchange = e => {
@@ -380,12 +464,11 @@ function loadUI(fileName) {
     render();
   };
 
-  // Search
   const si2 = document.getElementById('searchInput');
   si2.oninput = e => { query = e.target.value.trim(); render(); };
 
-  // Column sort
   document.querySelectorAll('thead th[data-col]').forEach(th => {
+    if (!th.dataset.col) return;
     th.onclick = () => {
       const col = th.dataset.col;
       if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
@@ -424,6 +507,12 @@ function render() {
   document.getElementById('rcount').innerHTML =
     `검색결과 <span>${filtered.length.toLocaleString()}</span>건 &nbsp;·&nbsp; 예산현액 합계 <span>${fmtWon(fb)}</span>`;
 
+  // Update memo count badge
+  const memoCount = Object.keys(MEMOS).length;
+  const badge = document.getElementById('memoCountBadge');
+  document.getElementById('memoCountNum').textContent = memoCount;
+  badge.style.display = memoCount > 0 ? 'inline-flex' : 'none';
+
   const tbody = document.getElementById('tbody');
   const emptyEl = document.getElementById('emptyEl');
   const tbl = document.getElementById('tbl');
@@ -437,10 +526,13 @@ function render() {
   emptyEl.style.display = 'none';
   tbl.style.display = '';
 
-  tbody.innerHTML = filtered.map(r => {
+  tbody.innerHTML = filtered.map((r, i) => {
     const er = r['집행률(B/A)'] || 0;
     const fc = er >= 70 ? 'hi' : er >= 30 ? 'md' : '';
     const pp = (r['세부항목담당자']||'').split(',').map(p=>p.trim()).filter(Boolean);
+    const key = memoKey(r);
+    const hasMemo = !!MEMOS[key];
+    const memoPreview = hasMemo ? escHtml(MEMOS[key].text.substring(0, 20)) + (MEMOS[key].text.length > 20 ? '…' : '') : '';
     return `<tr>
       <td><span class="badge bc">${hl(r['세부사업'],q)}</span></td>
       <td><span class="badge bi">${hl(r['세부항목'],q)}</span></td>
@@ -452,15 +544,94 @@ function render() {
       <td class="num ${r['예산잔액']>0?'pos':'zero'}">${fn(r['예산잔액'])}</td>
       <td class="num ${r['지급액(C)']>0?'pos':'zero'}">${fn(r['지급액(C)'])}</td>
       <td>${pp.map(p=>`<span class="ptag">${hl(p,q)}</span>`).join('')}</td>
+      <td>
+        <div class="memo-cell">
+          <button class="memo-btn ${hasMemo?'has-memo':''}" onclick="openMemo(${i})" title="${hasMemo?'메모 보기/수정':'메모 추가'}">
+            ${hasMemo ? '📝' : '✏️'}
+          </button>
+          ${hasMemo ? `<span style="font-size:11px;color:#92400e;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${memoPreview}</span>` : ''}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
+
+/* ── Memo functions ── */
+function openMemo(idx) {
+  const r = filtered[idx];
+  const key = memoKey(r);
+  currentMemoKey = key;
+
+  document.getElementById('mm-cat').textContent = r['세부사업'] || '';
+  document.getElementById('mm-name').textContent = r['세부항목'] || '';
+  document.getElementById('mm-sub').textContent = r['산출내역'] || '';
+  document.getElementById('mm-budget').innerHTML = `
+    <div class="mbi"><div class="mbl">예산현액</div><div class="mbv" style="color:var(--accent)">${fn(r['예산현액(A)'])}원</div></div>
+    <div class="mbi"><div class="mbl">원인행위액</div><div class="mbv" style="color:var(--green)">${fn(r['원인행위액(B)'])}원</div></div>
+    <div class="mbi"><div class="mbl">집행률</div><div class="mbv">${r['집행률(B/A)']>0?r['집행률(B/A)'].toFixed(1)+'%':'-'}</div></div>
+    <div class="mbi"><div class="mbl">예산잔액</div><div class="mbv">${fn(r['예산잔액'])}원</div></div>
+  `;
+
+  const existing = MEMOS[key];
+  const ta = document.getElementById('memoTextarea');
+  ta.value = existing ? existing.text : '';
+  document.getElementById('mm-saved-at').textContent = existing ? `마지막 저장: ${existing.savedAt}` : '';
+  document.getElementById('memoDelBtn').style.display = existing ? 'inline-flex' : 'none';
+
+  document.getElementById('memoOverlay').classList.add('open');
+  setTimeout(() => ta.focus(), 100);
+}
+
+function closeMemoModal(e) {
+  if (e && e.target !== document.getElementById('memoOverlay')) return;
+  document.getElementById('memoOverlay').classList.remove('open');
+  currentMemoKey = null;
+}
+
+function saveMemo() {
+  if (!currentMemoKey) return;
+  const text = document.getElementById('memoTextarea').value.trim();
+  if (!text) { deleteMemo(); return; }
+  const now = new Date().toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  MEMOS[currentMemoKey] = { text, savedAt: now };
+  saveMemoStorage();
+  document.getElementById('memoOverlay').classList.remove('open');
+  render();
+}
+
+function deleteMemo() {
+  if (!currentMemoKey) return;
+  delete MEMOS[currentMemoKey];
+  saveMemoStorage();
+  document.getElementById('memoOverlay').classList.remove('open');
+  render();
+}
+
+function saveMemoStorage() {
+  try { localStorage.setItem('schoolBudgetMemos', JSON.stringify(MEMOS)); } catch(e) {}
+}
+
+function showAllMemos() {
+  const keys = Object.keys(MEMOS);
+  if (keys.length === 0) return;
+  let msg = `📝 저장된 메모 ${keys.length}건\n${'─'.repeat(40)}\n`;
+  keys.forEach(k => {
+    const parts = k.split('||');
+    msg += `\n[${parts[0]}] ${parts[1]}\n${parts[2]}\n→ ${MEMOS[k].text}\n`;
+  });
+  alert(msg);
+}
+
+/* ── Keyboard shortcut ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('memoOverlay').classList.remove('open');
+});
 
 /* ── Helpers ── */
 function hl(text, q) {
   if (!q) return escHtml(text);
   return escHtml(text).replace(
-    new RegExp(`(${q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')})`, 'gi'),
+    new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
     '<span class="hl">$1</span>'
   );
 }
