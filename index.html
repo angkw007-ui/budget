@@ -108,11 +108,14 @@
   .rcount span { color:var(--accent); font-weight:700; }
 
   /* ── Table ── */
-  .table-container { padding:0 32px 40px; overflow-x:auto; }
-  table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; background:#fff; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  /* outer padding만 담당, overflow는 제거 → sticky thead가 정상 작동 */
+  .table-container { padding:0 32px 40px; }
+  /* 가로 스크롤은 별도 wrapper가 처리 */
+  .table-scroll { overflow-x:auto; border:1.5px solid var(--border); border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; background:#fff; }
   thead th {
-    background:var(--surface); padding:10px 13px; text-align:left; font-weight:600;
-    color:var(--text-muted); font-size:12px; border-bottom:1.5px solid var(--border);
+    background:var(--surface); padding:10px 13px; text-align:left; font-weight:700;
+    color:#111827; font-size:12px; border-bottom:1.5px solid var(--border);
     white-space:nowrap; cursor:pointer; user-select:none;
     position:sticky;
     top: var(--header-h);
@@ -126,14 +129,19 @@
   tbody tr { border-bottom:1px solid #f0f2f5; transition:background .1s; }
   tbody tr:last-child { border-bottom:none; }
   tbody tr:hover { background:#f5f8ff; }
-  tbody td { padding:9px 13px; vertical-align:middle; }
-  td.num { font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right; white-space:nowrap; }
-  td.num.pos { color:var(--green); }
-  td.num.zero { color:var(--text-dim); }
+  tbody td { padding:9px 13px; vertical-align:middle; color:#111827; }
+  td.num { font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right; white-space:nowrap; color:#111827; }
+  td.num.pos { color:#111827; }
+  td.num.zero { color:#6b7280; }
 
-  .badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:600; white-space:nowrap; }
-  .bc { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
-  .bi { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+  /* 소계 행 스타일 */
+  tbody tr.subtotal-row { background:#fffbeb !important; }
+  tbody tr.subtotal-row:hover { background:#fef9c3 !important; }
+  tbody tr.subtotal-row td { font-weight:600; color:#111827; border-top:1.5px solid #fcd34d; }
+
+  .badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:600; white-space:nowrap; color:#111827; }
+  .bc { background:#eff6ff; color:#111827; border:1px solid #bfdbfe; }
+  .bi { background:#f0fdf4; color:#111827; border:1px solid #bbf7d0; }
 
   .prog-wrap { display:flex; align-items:center; gap:7px; min-width:90px; }
   .prog-bar { height:5px; background:var(--surface2); border-radius:3px; flex:1; overflow:hidden; }
@@ -286,6 +294,7 @@
   </div>
 
   <div class="table-container">
+    <div class="table-scroll">
     <table id="tbl">
       <thead><tr>
         <th data-col="세부사업">세부사업</th>
@@ -302,6 +311,7 @@
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
+    </div><!-- /.table-scroll -->
     <div id="emptyEl" style="display:none" class="empty">
       <div class="ei">🔎</div>
       <h3>검색 결과가 없습니다</h3>
@@ -393,8 +403,12 @@ function parseAndLoad(rows, fileName) {
     const rec = {};
     headers.forEach((h, j) => { rec[h] = rows[i][j] ?? ''; });
     const cat = String(rec['세부사업'] || '');
-    if (!cat || /소\s*계|합\s*계|총/.test(cat)) continue;
+    if (!cat) continue;
+    // 합계/총계는 제외, 소계는 포함(플래그)
+    if (/합\s*계|총\s*계/.test(cat)) continue;
+    const isSubtotal = /소\s*계/.test(cat) || /소\s*계/.test(String(rec['세부항목']||''));
     numCols.forEach(k => { const v = parseFloat(rec[k]); rec[k] = isNaN(v) ? 0 : v; });
+    rec['_subtotal'] = isSubtotal;
     records.push(rec);
   }
   DATA = records;
@@ -533,17 +547,18 @@ function render() {
     const key = memoKey(r);
     const hasMemo = !!MEMOS[key];
     const memoPreview = hasMemo ? escHtml(MEMOS[key].text.substring(0, 20)) + (MEMOS[key].text.length > 20 ? '…' : '') : '';
-    return `<tr>
+    const isSubtotal = r['_subtotal'];
+    return `<tr class="${isSubtotal?'subtotal-row':''}">
       <td><span class="badge bc">${hl(r['세부사업'],q)}</span></td>
       <td><span class="badge bi">${hl(r['세부항목'],q)}</span></td>
-      <td style="color:var(--text-muted);font-size:12px">${hl(r['원가통계비목'],q)}</td>
-      <td>${hl(r['산출내역'],q)}</td>
-      <td class="num ${r['예산현액(A)']>0?'pos':'zero'}">${fn(r['예산현액(A)'])}</td>
-      <td class="num ${r['원인행위액(B)']>0?'pos':'zero'}">${fn(r['원인행위액(B)'])}</td>
-      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill ${fc}" style="width:${Math.min(er,100)}%"></div></div><span class="prog-pct">${er>0?er.toFixed(1)+'%':'-'}</span></div></td>
-      <td class="num ${r['예산잔액']>0?'pos':'zero'}">${fn(r['예산잔액'])}</td>
-      <td class="num ${r['지급액(C)']>0?'pos':'zero'}">${fn(r['지급액(C)'])}</td>
-      <td>${pp.map(p=>`<span class="ptag">${hl(p,q)}</span>`).join('')}</td>
+      <td style="font-size:12px;color:#111827">${hl(r['원가통계비목'],q)}</td>
+      <td style="color:#111827">${hl(r['산출내역'],q)}</td>
+      <td class="num">${fn(r['예산현액(A)'])}</td>
+      <td class="num">${fn(r['원인행위액(B)'])}</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill ${fc}" style="width:${Math.min(er,100)}%"></div></div><span class="prog-pct" style="color:#111827">${er>0?er.toFixed(1)+'%':'-'}</span></div></td>
+      <td class="num">${fn(r['예산잔액'])}</td>
+      <td class="num">${fn(r['지급액(C)'])}</td>
+      <td>${pp.map(p=>`<span class="ptag" style="color:#111827">${hl(p,q)}</span>`).join('')}</td>
       <td>
         <div class="memo-cell">
           <button class="memo-btn ${hasMemo?'has-memo':''}" onclick="openMemo(${i})" title="${hasMemo?'메모 보기/수정':'메모 추가'}">
