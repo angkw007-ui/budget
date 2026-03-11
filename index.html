@@ -348,7 +348,7 @@
       <button class="btn-cancel" onclick="closeAuth()">취소</button>
       <button class="btn-confirm" onclick="confirmAuth()">확인</button>
     </div>
-    <div class="auth-hint" id="authHint">※ 초기 비밀번호: <strong>admin1234</strong> (로그인 후 변경 가능)</div>
+    <div class="auth-hint" id="authHint">※ 관리자에게 비밀번호를 문의하세요</div>
   </div>
 </div>
 
@@ -400,6 +400,8 @@ const SK_MEMOS = 'budgetMEMOS_v1';
 window.addEventListener('DOMContentLoaded', () => {
   // 메모 로드
   try { MEMOS = JSON.parse(localStorage.getItem(SK_MEMOS)||'{}'); } catch(e){ MEMOS={}; }
+  // 기존 저장 비밀번호 초기화 (비밀번호 변경 시 1회 실행)
+  localStorage.removeItem(SK_PW);
 
   // 저장된 데이터 복원
   const saved = localStorage.getItem(SK_DATA);
@@ -745,7 +747,7 @@ function showMemoList() {
 const SK_PW    = 'budgetADMIN_pw_v1';   // 저장된 비밀번호 (해시)
 const SK_SESS  = 'budgetADMIN_sess_v1'; // 세션 만료 시각
 const SESS_MIN = 60;                     // 세션 유지 시간(분)
-const DEFAULT_PW = 'admin1234';
+const DEFAULT_PW = '0425';
 
 // 간단 해시 (보안이 필요한 경우 서버 사용 권장)
 async function hashPw(pw) {
