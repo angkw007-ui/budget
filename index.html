@@ -201,6 +201,45 @@
     .summary-cards { grid-template-columns:1fr 1fr; }
     .table-wrap { max-height:calc(100vh - 200px); }
   }
+
+  /* ── 관리자 인증 모달 ── */
+  .auth-overlay {
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center;
+  }
+  .auth-overlay.open { display:flex; }
+  .auth-modal {
+    background:#fff; border-radius:16px; padding:28px 28px 24px;
+    width:min(380px,92vw); box-shadow:0 24px 64px rgba(0,0,0,0.22);
+    animation:mIn .18s ease;
+  }
+  .auth-modal h2 { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .auth-modal p  { font-size:12px; color:var(--text-muted); margin-bottom:18px; }
+  .auth-input-wrap { position:relative; margin-bottom:10px; }
+  .auth-input {
+    width:100%; border:1.5px solid var(--border); border-radius:10px;
+    padding:11px 40px 11px 14px; font-family:inherit; font-size:14px;
+    color:#111827; outline:none; transition:border-color .2s, box-shadow .2s;
+    letter-spacing:3px;
+  }
+  .auth-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  .auth-toggle {
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer; font-size:16px; color:var(--text-muted);
+    padding:2px;
+  }
+  .auth-error { font-size:12px; color:#ef4444; margin-bottom:10px; min-height:18px; }
+  .auth-btns  { display:flex; gap:8px; }
+  .auth-btns .btn-cancel { flex:1; background:var(--surface2); color:var(--text-muted); border:none; border-radius:8px; padding:10px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .auth-btns .btn-cancel:hover { background:var(--border); }
+  .auth-btns .btn-confirm { flex:2; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .auth-btns .btn-confirm:hover { background:#1d4ed8; }
+  .auth-hint { font-size:11px; color:var(--text-dim); text-align:center; margin-top:12px; }
+
+  /* 관리자 로그인 상태 표시 */
+  .admin-badge { display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; color:#15803d; cursor:pointer; white-space:nowrap; }
+  .admin-badge:hover { background:#dcfce7; }
 </style>
 </head>
 <body>
@@ -216,7 +255,7 @@
     <p>예산현액 검색 및 조회 시스템</p>
   </div>
   <div class="hright" id="hright">
-    <label class="btn btn-primary" for="fileInput">📂 엑셀 파일 업로드</label>
+    <button class="btn btn-primary" onclick="requestFileUpload()">📂 엑셀 파일 업로드</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
   </div>
 </div>
@@ -290,6 +329,26 @@
         <p>다른 검색어나 필터를 시도해보세요</p>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 관리자 인증 모달 -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-modal">
+    <h2>🔐 관리자 인증</h2>
+    <p>파일을 업로드하려면 관리자 비밀번호를 입력하세요</p>
+    <div class="auth-input-wrap">
+      <input class="auth-input" id="authPwInput" type="password"
+             placeholder="비밀번호 입력" autocomplete="off"
+             onkeydown="if(event.key==='Enter') confirmAuth()">
+      <button class="auth-toggle" id="authToggle" onclick="togglePwVis()" title="비밀번호 표시">👁</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-btns">
+      <button class="btn-cancel" onclick="closeAuth()">취소</button>
+      <button class="btn-confirm" onclick="confirmAuth()">확인</button>
+    </div>
+    <div class="auth-hint" id="authHint">※ 초기 비밀번호: <strong>admin1234</strong> (로그인 후 변경 가능)</div>
   </div>
 </div>
 
@@ -369,7 +428,7 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch(e) { DATA=[]; }
   }
 
-  // 파일 입력 바인딩
+  // 파일 input 바인딩 (인증 후 직접 트리거되므로 change만 바인딩)
   bindFile('fileInput');
   setupDrop();
 });
@@ -387,7 +446,7 @@ function bindFile(id) {
 function setupDrop() {
   const dz = document.getElementById('dropZone');
   if (!dz) return;
-  dz.addEventListener('click', () => document.getElementById('fileInput').click());
+  dz.addEventListener('click', () => requestFileUpload());
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('over'));
   dz.addEventListener('drop', e => {
@@ -471,10 +530,11 @@ function loadUI(fileName) {
     <div class="stat-pill"><strong>총예산</strong>${fmtShort(totalB)}</div>
     <div class="stat-pill"><strong>${DATA.length}건</strong> 로드됨</div>
     <span class="file-tag" title="${esc(fileName)}">✅ ${esc(fileName)}</span>
-    <label class="btn btn-gray" for="fileReplace" style="font-size:11px;padding:6px 11px">📂 파일 교체</label>
+    ${isAdmin() ? `<span class="admin-badge" onclick="adminLogout()">🔓 관리자 · 로그아웃</span>` : ''}
+    <button class="btn btn-gray" onclick="requestFileUpload()" style="font-size:11px;padding:6px 11px">📂 파일 교체</button>
     <input type="file" id="fileReplace" accept=".xlsx,.xls" style="display:none">
   `;
-  document.getElementById('fileReplace').addEventListener('change', e=>{
+  document.getElementById('fileReplace')?.addEventListener('change', e=>{
     if(e.target.files[0]) readFile(e.target.files[0]);
   });
 
@@ -677,7 +737,118 @@ function showMemoList() {
   alert(msg);
 }
 
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('overlay').classList.remove('open'); });
+
+
+/* ════════════════════════════════
+   관리자 인증
+════════════════════════════════ */
+const SK_PW    = 'budgetADMIN_pw_v1';   // 저장된 비밀번호 (해시)
+const SK_SESS  = 'budgetADMIN_sess_v1'; // 세션 만료 시각
+const SESS_MIN = 60;                     // 세션 유지 시간(분)
+const DEFAULT_PW = 'admin1234';
+
+// 간단 해시 (보안이 필요한 경우 서버 사용 권장)
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function isAdmin() {
+  const exp = localStorage.getItem(SK_SESS);
+  return exp && Date.now() < Number(exp);
+}
+
+function extendSession() {
+  localStorage.setItem(SK_SESS, String(Date.now() + SESS_MIN * 60 * 1000));
+}
+
+function adminLogout() {
+  localStorage.removeItem(SK_SESS);
+  const fn = localStorage.getItem(SK_NAME) || '';
+  loadUI(fn);
+}
+
+let _authCallback = null; // 인증 후 실행할 콜백
+
+function requestFileUpload() {
+  if (isAdmin()) {
+    // 이미 로그인 상태면 바로 파일 선택
+    _triggerFilePick();
+  } else {
+    _authCallback = () => _triggerFilePick();
+    openAuth();
+  }
+}
+
+function _triggerFilePick() {
+  // 두 input 중 현재 DOM에 있는 것 사용
+  const el = document.getElementById('fileReplace') || document.getElementById('fileInput');
+  if (el) { el.value=''; el.click(); }
+}
+
+function openAuth() {
+  document.getElementById('authPwInput').value = '';
+  document.getElementById('authError').textContent = '';
+  // 초기 비밀번호가 설정돼 있으면 힌트 숨기기
+  const hasCustom = !!localStorage.getItem(SK_PW);
+  document.getElementById('authHint').style.display = hasCustom ? 'none' : 'block';
+  document.getElementById('authOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('authPwInput').focus(), 80);
+}
+
+function closeAuth() {
+  document.getElementById('authOverlay').classList.remove('open');
+  _authCallback = null;
+}
+
+async function confirmAuth() {
+  const input = document.getElementById('authPwInput').value;
+  if (!input) { document.getElementById('authError').textContent = '비밀번호를 입력하세요.'; return; }
+
+  const storedHash = localStorage.getItem(SK_PW);
+  const inputHash  = await hashPw(input);
+  const defaultHash = await hashPw(DEFAULT_PW);
+  const correct = storedHash ? (inputHash === storedHash) : (inputHash === defaultHash);
+
+  if (!correct) {
+    document.getElementById('authError').textContent = '비밀번호가 틀렸습니다.';
+    document.getElementById('authPwInput').value = '';
+    document.getElementById('authPwInput').focus();
+    return;
+  }
+
+  // 초기 비밀번호로 로그인했으면 비밀번호 변경 유도
+  if (!storedHash) {
+    const newPw = prompt('초기 비밀번호입니다.\n새 비밀번호를 입력하면 변경됩니다.\n(취소하면 현재 비밀번호 유지)');
+    if (newPw && newPw.trim().length >= 4) {
+      localStorage.setItem(SK_PW, await hashPw(newPw.trim()));
+      alert('비밀번호가 변경되었습니다.');
+    }
+  }
+
+  extendSession();
+  document.getElementById('authOverlay').classList.remove('open');
+
+  // 헤더 관리자 배지 갱신
+  const fn = localStorage.getItem(SK_NAME) || '';
+  if (fn) loadUI(fn);
+
+  if (_authCallback) { _authCallback(); _authCallback = null; }
+}
+
+function togglePwVis() {
+  const inp = document.getElementById('authPwInput');
+  const btn = document.getElementById('authToggle');
+  if (inp.type === 'password') { inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') {
+    document.getElementById('authOverlay').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+});
 
 /* ════════════════════════════════
    HELPERS
