@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 학교예산 사업관리카드</title>
+<title>2026 학교예산 현황</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -209,7 +209,10 @@
 <div id="mainHeader">
   <div class="hicon">📊</div>
   <div class="htitle">
-    <h1>학교예산 사업관리카드</h1>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+      <h1>학교예산 현황</h1>
+      <span id="headerDate" style="font-size:14px;font-weight:700;color:var(--text-muted);"></span>
+    </div>
     <p>예산현액 검색 및 조회 시스템</p>
   </div>
   <div class="hright" id="hright">
@@ -430,6 +433,7 @@ function parseAndLoad(rows, fileName) {
   try {
     localStorage.setItem(SK_DATA, JSON.stringify(DATA));
     localStorage.setItem(SK_NAME, fileName);
+    localStorage.setItem('budgetUPDATE_v1', new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
   } catch(e) {
     // 용량 초과시 저장 생략
   }
@@ -449,6 +453,9 @@ function loadUI(fileName) {
 
   // 헤더 우측
   const totalB = DATA.reduce((s,r)=>s+(r['예산현액(A)']||0),0);
+  const updDate = localStorage.getItem('budgetUPDATE_v1') || '';
+  const dateEl = document.getElementById('headerDate');
+  if (dateEl) dateEl.textContent = updDate ? `(${updDate} 업데이트)` : '';
   document.getElementById('hright').innerHTML = `
     <div class="stat-pill"><strong>총예산</strong>${fmtShort(totalB)}</div>
     <div class="stat-pill"><strong>${DATA.length}건</strong> 로드됨</div>
