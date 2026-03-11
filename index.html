@@ -357,6 +357,13 @@ window.addEventListener('DOMContentLoaded', () => {
             /소\s*계/.test(String(rec['세부항목']||'')) ||
             /소\s*계/.test(String(rec['산출내역']||''));
         });
+        // 복원 시에도 날짜 즉시 반영
+        const d = localStorage.getItem('budgetUPDATE_v1') || '';
+        const dateEl = document.getElementById('headerDate');
+        if (dateEl) {
+          dateEl.textContent = d ? `(${d} 업데이트)` : '(파일 교체 시 날짜 표시)';
+          dateEl.style.color = d ? '#374151' : '#9ca3af';
+        }
         loadUI(savedName); return;
       }
     } catch(e) { DATA=[]; }
@@ -455,7 +462,11 @@ function loadUI(fileName) {
   const totalB = DATA.reduce((s,r)=>s+(r['예산현액(A)']||0),0);
   const updDate = localStorage.getItem('budgetUPDATE_v1') || '';
   const dateEl = document.getElementById('headerDate');
-  if (dateEl) dateEl.textContent = updDate ? `(${updDate} 업데이트)` : '';
+  if (dateEl) {
+    const d = localStorage.getItem('budgetUPDATE_v1') || '';
+    dateEl.textContent = d ? `(${d} 업데이트)` : '(파일 교체 시 날짜 표시)';
+    dateEl.style.color = d ? '#374151' : '#9ca3af';
+  }
   document.getElementById('hright').innerHTML = `
     <div class="stat-pill"><strong>총예산</strong>${fmtShort(totalB)}</div>
     <div class="stat-pill"><strong>${DATA.length}건</strong> 로드됨</div>
