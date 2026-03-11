@@ -130,9 +130,9 @@
   tbody td { padding:9px 12px;vertical-align:middle;color:#111827; }
 
   /* 소계 행 */
-  tbody tr.subtotal { background:#fffbeb !important; }
-  tbody tr.subtotal:hover { background:#fef9c3 !important; }
-  tbody tr.subtotal td { font-weight:700;color:#111827;border-top:1.5px solid #fde68a; }
+  tbody tr.subtotal td,
+  tbody tr.subtotal td.num { background:#fffbeb !important; color:#111827 !important; font-weight:700; border-top:2px solid #fde68a; }
+  tbody tr.subtotal:hover td { background:#fef3c7 !important; }
 
   td.num { font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;white-space:nowrap;color:#111827; }
   td.num.zero { color:#9ca3af; }
@@ -345,7 +345,17 @@ window.addEventListener('DOMContentLoaded', () => {
   if (saved) {
     try {
       DATA = JSON.parse(saved);
-      if (DATA.length) { loadUI(savedName); return; }
+      if (DATA.length) {
+        // _sub 플래그 재계산 (이전 버전 저장 데이터 호환)
+        DATA.forEach(rec => {
+          const allVals = Object.values(rec).map(v=>String(v||'').replace(/\s/g,'')).join('|');
+          rec._sub = allVals.includes('소계') ||
+            /소\s*계/.test(String(rec['세부사업']||'')) ||
+            /소\s*계/.test(String(rec['세부항목']||'')) ||
+            /소\s*계/.test(String(rec['산출내역']||''));
+        });
+        loadUI(savedName); return;
+      }
     } catch(e) { DATA=[]; }
   }
 
@@ -405,8 +415,12 @@ function parseAndLoad(rows, fileName) {
     const cat = String(rec['세부사업']||'');
     if (!cat) continue;
     if (/합\s*계|총\s*계/.test(cat)) continue; // 합계/총계 제외
-    // 소계는 포함 + 플래그
-    const isSub = /소\s*계/.test(cat) || /소\s*계/.test(String(rec['세부항목']||''));
+    // 소계 감지: 공백 제거 후 '소계' 포함 여부 확인 (모든 컬럼 대상)
+    const allVals = Object.values(rec).map(v=>String(v||'').replace(/\s/g,'')).join('|');
+    const isSub = allVals.includes('소계') ||
+      /소\s*계/.test(cat) ||
+      /소\s*계/.test(String(rec['세부항목']||'')) ||
+      /소\s*계/.test(String(rec['산출내역']||''));
     numCols.forEach(k=>{ const v=parseFloat(rec[k]); rec[k]=isNaN(v)?0:v; });
     rec._sub = isSub;
     records.push(rec);
